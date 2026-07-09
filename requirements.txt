@@ -1,0 +1,23 @@
+Django==5.0.6
+djangorestframework==3.15.1
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.3.1
+python-dotenv==1.0.1
+# ASGI server + realtime — see crm/sockets.py and salesport/asgi.py. Run with
+# `uvicorn salesport.asgi:application`, never `manage.py runserver` (WSGI-only,
+# can't serve /socket.io/ at all).
+uvicorn==0.32.1
+python-socketio==5.11.4
+# MySQL driver (SalesPort's DB). Needs system libs (default-libmysqlclient-dev).
+# Not required if you run with DB_ENGINE=sqlite for a quick demo.
+mysqlclient==2.2.4
+# Task queue (Phase 7 Follow-ups + Phase 10 Notification fan-out).
+django-q2==1.10.0
+# Cache + Django-Q2 broker — Memurai locally, ElastiCache/managed Redis in
+# prod. Pinned to the 5.x line: django-redis 6+ requires Django>=5.2, which
+# would silently pull in a Django major-version bump alongside it.
+django-redis==5.4.0
+redis==8.0.1
+# S3 file storage (FILE_STORAGE=s3) — inactive by default (filesystem).
+django-storages==1.14.6
+boto3==1.43.40
