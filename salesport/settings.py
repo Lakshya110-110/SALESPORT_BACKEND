@@ -142,13 +142,22 @@ else:
         }
     }
 
-# Managed MySQL providers (Aiven, PlanetScale, etc.) require TLS. Opt in with
-# DB_SSL_MODE=REQUIRED (or VERIFY_CA/VERIFY_IDENTITY) — works whether DATABASES
-# came from DATABASE_URL or the DB_* vars above. Left unset, behavior is
-# unchanged (plain connection, e.g. local MySQL).
-_db_ssl_mode = env("DB_SSL_MODE", "")
-if _db_ssl_mode and DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
-    DATABASES["default"].setdefault("OPTIONS", {})["ssl_mode"] = _db_ssl_mode
+# Managed MySQL providers (Aiven, PlanetScale, etc.) require TLS. Their
+# connection strings often carry a `?ssl-mode=REQUIRED` query param, which
+# dj_database_url passes straight into OPTIONS verbatim — but `ssl-mode`
+# (hyphen) isn't a real MySQLdb.connect() keyword, so leaving it in place
+# raises `TypeError: 'ssl-mode' is an invalid keyword argument` the moment
+# Django opens a connection. Drop it and use the correctly-named `ssl_mode`
+# (underscore) instead, driven by DB_SSL_MODE=REQUIRED (or VERIFY_CA/
+# VERIFY_IDENTITY) — works whether DATABASES came from DATABASE_URL or the
+# DB_* vars above, and means Aiven's connection string can be pasted in
+# verbatim. Left unset, behavior is unchanged (plain connection, e.g. local
+# MySQL).
+if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
+    DATABASES["default"].get("OPTIONS", {}).pop("ssl-mode", None)
+    _db_ssl_mode = env("DB_SSL_MODE", "")
+    if _db_ssl_mode:
+        DATABASES["default"].setdefault("OPTIONS", {})["ssl_mode"] = _db_ssl_mode
 
 AUTH_USER_MODEL = "crm.User"
 
