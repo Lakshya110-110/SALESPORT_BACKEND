@@ -142,6 +142,14 @@ else:
         }
     }
 
+# Managed MySQL providers (Aiven, PlanetScale, etc.) require TLS. Opt in with
+# DB_SSL_MODE=REQUIRED (or VERIFY_CA/VERIFY_IDENTITY) — works whether DATABASES
+# came from DATABASE_URL or the DB_* vars above. Left unset, behavior is
+# unchanged (plain connection, e.g. local MySQL).
+_db_ssl_mode = env("DB_SSL_MODE", "")
+if _db_ssl_mode and DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
+    DATABASES["default"].setdefault("OPTIONS", {})["ssl_mode"] = _db_ssl_mode
+
 AUTH_USER_MODEL = "crm.User"
 
 AUTH_PASSWORD_VALIDATORS = [

@@ -1,0 +1,34 @@
+# Render Blueprint for Khwaishein's free-tier deploy.
+#
+# Usage: Render dashboard → New → Blueprint → point at this repo/branch.
+# Render reads this file and creates the service below. Env vars marked
+# `sync: false` are NOT set here — fill them in by hand in the Render
+# dashboard after the service is created. Nothing in this repo generates or
+# stores those values; see DEPLOY.md §7 for what each one should be.
+services:
+  - type: web
+    name: khwaishein-backend
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    startCommand: sh scripts/render-start.sh
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: DB_SSL_MODE
+        value: REQUIRED
+      - key: CACHE_BACKEND
+        value: locmem
+      - key: OTP_RETURN_IN_RESPONSE
+        value: "True"
+      - key: OTP_TEST_PHONE_NUMBERS
+        sync: false

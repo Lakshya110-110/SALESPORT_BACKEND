@@ -1,4 +1,4 @@
-# SalesPort CRM backend — production image.
+# Khwaishein CRM backend — production image.
 #
 # Why a Dockerfile over a Procfile: the stated deploy target is AWS, where a
 # container is the standard deployable unit (ECS/Fargate, App Runner, or EC2
@@ -8,11 +8,13 @@
 # (most accept "deploy this image" as well as a Procfile), so it's the more
 # portable choice without losing anything.
 #
-# This same image runs BOTH processes SalesPort needs — which one depends on
+# This same image runs BOTH processes Khwaishein needs — which one depends on
 # the command the deploy platform runs it with, not on anything baked into
 # the image:
 #   Web:    uvicorn salesport.asgi:application --host 0.0.0.0 --port $PORT
 #   Worker: python manage.py qcluster
+# On a single-instance free host with no separate worker process (Render's
+# free tier), scripts/render-start.sh runs both in one container instead.
 # See DEPLOY.md for exact commands, env vars, and release-step (migrate /
 # collectstatic) instructions.
 
@@ -44,8 +46,10 @@ COPY . .
 # populated even before that step runs.
 RUN python manage.py collectstatic --noinput
 
+RUN chmod +x scripts/render-start.sh
+
 # Runs as an unprivileged user — standard container hardening, not
-# SalesPort-specific.
+# Khwaishein-specific.
 RUN useradd --create-home --shell /bin/bash appuser
 USER appuser
 
