@@ -17,3 +17,4 @@ media/
 staticfiles/
 *.md
 !DEPLOY.md
+web/
