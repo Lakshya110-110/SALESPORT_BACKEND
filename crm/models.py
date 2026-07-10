@@ -1,5 +1,5 @@
 """
-Data model for the SalesPort Enterprise Lead Management CRM.
+Data model for the Khwaishein Enterprise Lead Management CRM.
 Mirrors the entities in the web console and the mobile field app.
 """
 from django.db import models

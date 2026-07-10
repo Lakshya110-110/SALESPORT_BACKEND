@@ -1,4 +1,4 @@
-# SalesPort — Enterprise Lead Management CRM (Backend)
+# Khwaishein — Enterprise Lead Management CRM (Backend)
 
 Django + DRF backend that powers the **web admin console** and the **mobile field app**
 mockups. Phone + OTP auth, role-aware data (admin / consultant), and endpoints for every
@@ -11,7 +11,7 @@ flow the UIs perform.
 ## Stack
 - Django 5 + Django REST Framework
 - JWT auth (`djangorestframework-simplejwt`)
-- **MySQL** (SalesPort's DB) — with a **SQLite** fallback for instant demos
+- **MySQL** (Khwaishein's DB) — with a **SQLite** fallback for instant demos
 - CORS enabled for the web + mobile clients
 
 ---
@@ -28,7 +28,7 @@ python manage.py seed_demo
 uvicorn salesport.asgi:application --reload
 ```
 
-### Option B — MySQL (production-like, SalesPort's current DB)
+### Option B — MySQL (production-like, Khwaishein's current DB)
 1. `pip install -r requirements.txt`  (installs `mysqlclient`; needs `default-libmysqlclient-dev` on Linux)
 2. Create the DB: `CREATE DATABASE salesport_crm CHARACTER SET utf8mb4;`
 3. Copy `.env.example` → `.env` and fill the `DB_*` values.

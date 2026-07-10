@@ -1,5 +1,5 @@
 """
-Seed the database with demo data that matches the SalesPort mockups
+Seed the database with demo data that matches the Khwaishein mockups
 (Param Dairy, Today Milk, reps, sample enquiries, meetings, notifications).
 
 Idempotent: wipes activity data (enquiries + downstream) and recreates.
@@ -114,7 +114,7 @@ def _stamp(model, pk, created_at):
 
 
 class Command(BaseCommand):
-    help = "Seed demo data for the SalesPort CRM"
+    help = "Seed demo data for Khwaishein"
 
     def add_arguments(self, parser):
         parser.add_argument(
