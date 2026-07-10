@@ -1,0 +1,348 @@
+'use client';
+
+import { useState, type FormEvent } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Pencil, Plus, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { SectionHeader } from '@/components/shell/SectionHeader';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { Switch } from '@/components/ui/Switch';
+import { endpoints } from '@/lib/api/endpoints';
+import { session } from '@/lib/auth/session';
+import { avatarColor, initials, fmtPhone } from '@/lib/utils/format';
+import { cn } from '@/lib/utils/cn';
+import type { User } from '@/lib/api/types';
+
+/**
+ * Users — /users.
+ *
+ * Admin-only writes (server enforces via `IsAdminRole`). Consultants land
+ * here they'll see the list read-only (Add and toggles hidden). The Rail
+ * only shows this link for admins today; this component still checks
+ * server-side by omitting write UI when `session.user.role !== 'admin'`.
+ */
+export default function UsersPage() {
+  const currentUser = session.getUser();
+  const isAdmin = currentUser?.role === 'admin';
+  const [newOpen, setNewOpen] = useState(false);
+  const [editUser, setEditUser] = useState<User | null>(null);
+  const qc = useQueryClient();
+
+  const q = useQuery({
+    queryKey: ['users', 'list'],
+    queryFn: () => endpoints.users.list({ page_size: 100 }),
+  });
+
+  const toggle = useMutation({
+    mutationFn: ({ id, is_active }: { id: number; is_active: boolean }) =>
+      endpoints.users.patch(id, { is_active }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+  });
+
+  const rows = q.data?.results ?? [];
+
+  return (
+    <>
+      <SectionHeader
+        title="Users"
+        subtitle={`${q.data?.count ?? 0} on the team`}
+        actions={
+          isAdmin ? (
+            <Button leftIcon={<Plus size={15} />} onClick={() => setNewOpen(true)}>
+              Add user
+            </Button>
+          ) : undefined
+        }
+      />
+
+      <div className="w-full px-3 pt-3 pb-5 xl:px-4">
+        <div className="rounded-card border border-b-subtle bg-surface shadow-sm">
+          <table className="w-full text-[12.5px]">
+            <thead>
+              <tr className="border-b border-b-default bg-sunken">
+                <Th>Name</Th>
+                <Th>Phone</Th>
+                <Th>Email</Th>
+                <Th>Role</Th>
+                <Th>Edit</Th>
+                <Th className="text-right">Active</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {q.isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="border-t border-b-subtle">
+                    <td colSpan={6} className="px-4 py-3">
+                      <div className="h-4 animate-pulse rounded bg-soft" />
+                    </td>
+                  </tr>
+                ))
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="p-10 text-center text-[12.5px] text-subtle">
+                    No users yet.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((u) => (
+                  <tr key={u.id} className="border-t border-b-subtle hover:bg-soft">
+                    <Td>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                          style={{ background: u.avatar_color || avatarColor(u.name) }}
+                        >
+                          {u.initials || initials(u.name)}
+                        </div>
+                        <span className="font-semibold text-text">{u.name}</span>
+                      </div>
+                    </Td>
+                    <Td><span className="font-mono">{fmtPhone(u.phone)}</span></Td>
+                    <Td>{u.email || '—'}</Td>
+                    <Td>
+                      <RoleBadge role={u.role} />
+                    </Td>
+                    <Td>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => setEditUser(u)}
+                          className="flex h-8 w-8 items-center justify-center rounded-md text-subtle hover:bg-soft hover:text-primary"
+                          aria-label={`Edit ${u.name}`}
+                          title="Edit user"
+                        >
+                          <Pencil size={16} />
+                        </button>
+                      )}
+                    </Td>
+                    <Td className="text-right">
+                      {isAdmin ? (
+                        <div title={u.id === currentUser?.id ? 'You cannot deactivate your own admin account' : undefined}>
+                          <Switch
+                            checked={u.is_active}
+                            onChange={(next) => toggle.mutate({ id: u.id, is_active: next })}
+                            disabled={u.id === currentUser?.id}
+                            ariaLabel={u.is_active ? 'Deactivate user' : 'Activate user'}
+                          />
+                        </div>
+                      ) : (
+                        <span className={cn('text-[11px] font-semibold', u.is_active ? 'text-success' : 'text-subtle')}>
+                          {u.is_active ? 'Active' : 'Inactive'}
+                        </span>
+                      )}
+                    </Td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {isAdmin && <NewUserModal open={newOpen} onClose={() => setNewOpen(false)} />}
+      {isAdmin && editUser && (
+        <EditUserModal user={editUser} open={!!editUser} onClose={() => setEditUser(null)} />
+      )}
+    </>
+  );
+}
+
+function RoleBadge({ role }: { role: User['role'] }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1 rounded-sm px-1.5 py-0.5 text-[11px] font-semibold',
+        role === 'admin' ? 'bg-primary-soft text-primary' : 'bg-soft text-muted',
+      )}
+    >
+      {role === 'admin' ? <ShieldCheck size={11} /> : <UserIcon size={11} />}
+      {role}
+    </span>
+  );
+}
+
+function NewUserModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState<'admin' | 'consultant'>('consultant');
+  const qc = useQueryClient();
+
+  const reset = () => {
+    setName(''); setPhone(''); setEmail(''); setRole('consultant');
+  };
+
+  const submit = useMutation({
+    mutationFn: () =>
+      endpoints.users.create({
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+        role,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users'] });
+      reset();
+      onClose();
+    },
+  });
+
+  return (
+    <Modal
+      open={open}
+      onClose={() => { reset(); onClose(); }}
+      title="Add user"
+      size="sm"
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={() => { reset(); onClose(); }}>Cancel</Button>
+          <Button
+            type="submit"
+            form="new-user-form"
+            loading={submit.isPending}
+            disabled={!name.trim() || !phone.trim()}
+          >
+            Add
+          </Button>
+        </>
+      }
+    >
+      <form
+        id="new-user-form"
+        onSubmit={(e: FormEvent<HTMLFormElement>) => { e.preventDefault(); submit.mutate(); }}
+        className="space-y-4"
+      >
+        <Field label="Name" required>
+          <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
+        </Field>
+        <Field label="Phone" required>
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9876500006" className={inputCls} />
+        </Field>
+        <Field label="Email">
+          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputCls} />
+        </Field>
+        <Field label="Role" required>
+          <div className="flex gap-2">
+            {(['consultant', 'admin'] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRole(r)}
+                className={cn(
+                  'flex-1 rounded-md border py-2 text-[13px] font-semibold',
+                  role === r
+                    ? 'border-primary bg-primary-soft text-primary'
+                    : 'border-b-default bg-surface text-muted hover:bg-soft',
+                )}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </Field>
+        {submit.error && (
+          <div className="rounded-md bg-danger-soft p-2 text-[12px] text-danger">
+            {(submit.error as Error).message}
+          </div>
+        )}
+      </form>
+    </Modal>
+  );
+}
+
+function EditUserModal({ user, open, onClose }: { user: User; open: boolean; onClose: () => void }) {
+  const [name, setName] = useState(user.name);
+  const [phone, setPhone] = useState(user.phone);
+  const [email, setEmail] = useState(user.email);
+  const qc = useQueryClient();
+
+  const submit = useMutation({
+    mutationFn: () =>
+      endpoints.users.patch(user.id, {
+        name: name.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users'] });
+      onClose();
+    },
+  });
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Edit user"
+      size="sm"
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button
+            type="submit"
+            form="edit-user-form"
+            loading={submit.isPending}
+            disabled={!name.trim() || !phone.trim()}
+          >
+            Save
+          </Button>
+        </>
+      }
+    >
+      <form
+        id="edit-user-form"
+        onSubmit={(e: FormEvent<HTMLFormElement>) => { e.preventDefault(); submit.mutate(); }}
+        className="space-y-4"
+      >
+        <Field label="Name" required>
+          <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
+        </Field>
+        <Field label="Phone" required>
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} />
+        </Field>
+        <Field label="Email">
+          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputCls} />
+        </Field>
+        {submit.error && (
+          <div className="rounded-md bg-danger-soft p-2 text-[12px] text-danger">
+            {(submit.error as Error).message}
+          </div>
+        )}
+      </form>
+    </Modal>
+  );
+}
+
+const inputCls = cn(
+  'h-10 w-full rounded-md border border-b-default bg-surface px-3 text-[13px] text-text placeholder:text-subtle',
+  'focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-soft',
+);
+
+function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-[10.5px] font-semibold uppercase tracking-wider text-subtle">
+        {label}
+        {required && <span className="ml-1 text-danger">*</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function Th({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <th
+      className={cn(
+        'sticky top-[76px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
+        'shadow-[inset_0_-1px_0_var(--b-default)]',
+        className,
+      )}
+    >
+      {children}
+    </th>
+  );
+}
+function Td({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <td className={cn('px-4 py-3 align-middle', className)}>{children}</td>;
+}
