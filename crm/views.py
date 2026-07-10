@@ -22,6 +22,7 @@ from .serializers import (
 from .permissions import IsAdminRole
 from .sockets import emit_notification, emit_enquiry_event, emit_enquiry_action, emit_user_created
 from .notifications import get_notification_service
+from .otp_delivery import get_otp_delivery_service
 
 
 # ===========================================================================
@@ -34,10 +35,10 @@ def request_otp(request):
     ser.is_valid(raise_exception=True)
     phone = ser.validated_data["phone"].strip()
     otp = OTP.issue(phone)
-    # In production, send via SMS gateway here. For demo we optionally return it.
+    result = get_otp_delivery_service().send_otp(phone=phone, code=otp.code)
     payload = {"detail": "OTP sent", "phone": phone}
-    if settings.OTP_RETURN_IN_RESPONSE:
-        payload["otp"] = otp.code  # DEV ONLY
+    if result.get("echo_in_response"):
+        payload["otp"] = otp.code  # DEV/TEST ONLY — see crm/otp_delivery.py
     return Response(payload)
 
 

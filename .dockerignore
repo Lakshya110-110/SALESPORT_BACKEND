@@ -9,7 +9,11 @@ __pycache__/
 *.pyc
 db.sqlite3
 media/
-staticfiles/
 *.rar
 *.zip
 *.7z
+.git/
+.gitignore
+staticfiles/
+*.md
+!DEPLOY.md
