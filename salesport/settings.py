@@ -1,5 +1,5 @@
 """
-Django settings for the SalesPort Enterprise Lead Management CRM backend.
+Django settings for the Khwaishein Enterprise Lead Management CRM backend.
 Powers the web admin console and the mobile field app.
 Sort String Solutions LLP.
 """
@@ -104,13 +104,13 @@ TEMPLATES = [
 WSGI_APPLICATION = "salesport.wsgi.application"
 
 # ---------------------------------------------------------------------------
-# Database — MySQL (SalesPort's current) with a SQLite fallback for quick demo.
+# Database — MySQL (Khwaishein's current) with a SQLite fallback for quick demo.
 #
 # Three ways in, checked in this order:
 #   1. DATABASE_URL — a single connection string. What most PaaS platforms
 #      (Render, Railway, Heroku-likes) inject automatically; set it and
 #      every DB_* var below is ignored.
-#   2. DB_ENGINE=mysql (default) + the DB_* vars — SalesPort's own AWS/RDS
+#   2. DB_ENGINE=mysql (default) + the DB_* vars — Khwaishein's own AWS/RDS
 #      setup, or any MySQL you point it at by hand.
 #   3. DB_ENGINE=sqlite, or DB_NAME simply left unset — runs instantly with
 #      no external database, for a quick local demo.

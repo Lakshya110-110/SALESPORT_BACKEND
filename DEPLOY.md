@@ -1,4 +1,4 @@
-# Deploying the SalesPort backend
+# Deploying the Khwaishein backend
 
 This covers taking the Django/DRF + Socket.IO backend from local dev to a
 real production host. It doesn't cover *which* AWS service to run the
