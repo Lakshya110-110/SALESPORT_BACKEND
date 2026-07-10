@@ -12,7 +12,7 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     dockerContext: .
-    startCommand: sh scripts/render-start.sh
+    dockerCommand: sh scripts/render-start.sh
     envVars:
       - key: SECRET_KEY
         generateValue: true
