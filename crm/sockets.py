@@ -130,6 +130,16 @@ def emit_enquiry_event(enquiry, event: str) -> None:
     }, room=rooms)
 
 
+def emit_user_created(user) -> None:
+    """Push a newly-created user to the Users page — admin-only, mirrors
+    emit_enquiry_event's "something changed, refetch" shape. Only admins
+    manage the team roster (see UserViewSet.get_permissions), so this is
+    a plain role:admin broadcast, not owner/enquiry-scoped."""
+    from .serializers import UserSerializer
+
+    async_to_sync(sio.emit)("user:created", UserSerializer(user).data, room=[_role_room("admin")])
+
+
 def emit_enquiry_action(enquiry, event: str, payload: dict) -> None:
     """Push a specific, payload-carrying event for something that happened
     inside one enquiry (a new touchpoint, a status flip, a meeting created

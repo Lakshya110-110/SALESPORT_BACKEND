@@ -19,7 +19,7 @@ from .serializers import (
     RequestOTPSerializer, VerifyOTPSerializer,
 )
 from .permissions import IsAdminRole
-from .sockets import emit_notification, emit_enquiry_event, emit_enquiry_action
+from .sockets import emit_notification, emit_enquiry_event, emit_enquiry_action, emit_user_created
 from .notifications import get_notification_service
 
 
@@ -59,6 +59,8 @@ def verify_otp(request):
         phone=phone,
         defaults={"name": "New User", "role": role},
     )
+    if created:
+        emit_user_created(user)
     refresh = RefreshToken.for_user(user)
     return Response({
         "access": str(refresh.access_token),
@@ -96,6 +98,10 @@ class UserViewSet(viewsets.ModelViewSet):
         if self.action in ("create", "update", "partial_update", "destroy"):
             return [IsAdminRole()]
         return [permissions.IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        user = serializer.save()
+        emit_user_created(user)
 
 
 class CompanyViewSet(viewsets.ModelViewSet):

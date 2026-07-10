@@ -134,6 +134,25 @@ REST serializer (`TouchpointSerializer`, `MeetingSerializer`, etc.) — see
 }
 ```
 
+## Team roster events
+
+| Event | Fires when | Payload | Target rooms |
+|---|---|---|---|
+| `user:created` | A new User row is created — either an admin adding someone via `POST /users/`, or a brand-new phone number completing OTP login for the first time (`get_or_create` in `verify_otp`) | Full `UserSerializer` object | `role:admin` |
+
+Admin-only: the Users page is the only place this matters, and only admins
+manage the team roster (`UserViewSet.get_permissions`). Consultants don't
+listen for this.
+
+```jsonc
+// user:created
+{
+  "id": 10, "phone": "9123456780", "name": "New User", "email": "",
+  "role": "consultant", "avatar_color": "#2547C8", "initials": "NU",
+  "is_active": true, "created_at": "2026-07-10T12:19:46.585231+05:30"
+}
+```
+
 ## Pre-existing events (unchanged, not part of this contract update)
 
 These existed before the per-action events above and still fire exactly as
