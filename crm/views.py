@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.db.models import Count, Sum, Q
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.parsers import JSONParser, FormParser, MultiPartParser
@@ -370,12 +371,18 @@ class MeetingViewSet(viewsets.ModelViewSet):
         # so admins see outcome activity roll in.
         if old.status != "Done" and m.status == "Done":
             sentiment = m.outcome_sentiment or "logged"
-            Notification.objects.create(
+            notif = Notification.objects.create(
                 audience="admin", ntype="team_update",
                 title="Meeting outcome logged",
                 subtitle=f"{m.company.name} · {m.purpose} — {sentiment}",
                 link_type="meeting", link_id=str(m.id),
             )
+            emit_notification(notif)
+        # Any plain PATCH/PUT (outcome logging, edits) — same "something in
+        # this meeting changed" push the dedicated reschedule action sends,
+        # so a Done/edited meeting shows up live everywhere reschedule does.
+        if m.enquiry_id:
+            emit_enquiry_action(m.enquiry, "meeting:updated", {"meeting": MeetingSerializer(m).data})
 
     @staticmethod
     def _queue_notifications(m):
@@ -390,7 +397,23 @@ class MeetingViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def reschedule(self, request, pk=None):
         m = self.get_object()
-        m.scheduled_at = request.data.get("scheduled_at", m.scheduled_at)
+        new_scheduled = request.data.get("scheduled_at")
+        if new_scheduled:
+            # Parse into a real aware datetime instead of assigning the raw
+            # string straight onto the model attribute — a bare string
+            # assignment skips DRF's DateTimeField entirely, so `.save()`
+            # stores it fine but the in-memory `m` still holds that exact
+            # string. Serializing it right back out (below) then just echoes
+            # whatever timezone format the caller happened to send (a bare
+            # "Z"-suffixed UTC string from JS's toISOString(), or a naive
+            # string with no offset at all from Flutter's toIso8601String())
+            # instead of the consistent, localized format every other
+            # meeting field gets — the value is still correct, but any
+            # client doing anything less than a full ISO-8601 parse on read
+            # (e.g. a naive substring split) reads the wrong wall-clock time.
+            parsed = parse_datetime(new_scheduled)
+            if parsed:
+                m.scheduled_at = timezone.make_aware(parsed) if timezone.is_naive(parsed) else parsed
         m.status = "Scheduled"
         update_fields = ["scheduled_at", "status"]
         # Everything else the Reschedule modal composes — saved for real now,
