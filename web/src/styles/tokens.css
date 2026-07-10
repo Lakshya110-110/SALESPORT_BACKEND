@@ -1,0 +1,208 @@
+/* Khwaishein — design tokens.
+   SOURCE OF TRUTH: D:\lakshya\CRM BACKEND\index\Enterprise_CRM_Mockup_Airy.html (:root, lines 5-32).
+   Values below MUST match that file byte-for-byte. When the HTML changes, this file changes.
+   Do not reintroduce values from the old design-system HTML.
+
+   Dark mode toggle: the HTML uses `[data-theme="dark"]` on <html>. We also
+   support `body.dark` for compatibility with the current ThemeToggle wiring.
+*/
+
+:root {
+  /* --- Surfaces & structure --- */
+  --canvas: #EEF1F6;
+  --surface: #FFFFFF;
+  --soft: #F4F6FA;
+  --sunken: #EAEEF4;
+  --b-subtle: #EDF0F5;
+  --b-default: #E2E7EF;
+  --b-strong: #CBD3DF;
+
+  /* --- Content (text) --- */
+  --text: #16213D;
+  --muted: #5A6478;
+  --subtle: #8A94A6;
+  --disabled: #B3BCCB;
+  --link: #2547C8;
+  --ring: #2547C8;
+
+  /* --- Brand: navy + primary blue --- */
+  --ink: #16213D;
+  --navy: #1B2A6B;
+
+  /* --- Chart series (used by funnel, bars, donut) --- */
+  --bar1: #6E8BD6;
+  --bar2: #3F63C6;
+  --bar3: #1B2A6B;
+
+  /* --- Primary blue --- */
+  --primary: #2547C8;
+  --primary-hover: #1B36A0;
+  --primary-soft: #E5EBFB;
+  --on-primary: #FFFFFF;
+
+  /* --- Accents (blue, teal, purple) --- */
+  --accent: #3F63C6;
+  --accent-soft: #E8EEFB;
+  --teal: #0F8A7E;
+  --teal-soft: #D7F0EE;
+  --purple: #7C3AED;
+  --purple-soft: #EDE4FB;
+
+  /* --- Semantic status --- */
+  --success: #1F9D5B;
+  --success-soft: #E2F6EC;
+  --warning: #C77A12;
+  --warning-soft: #FBF0DC;
+  --danger: #D14343;
+  --danger-soft: #FBE7E7;
+  --info: #2563EB;
+  --info-soft: #E6EEFC;
+
+  /* --- Radii --- */
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+  --r-full: 9999px;
+
+  /* --- Shadows (only two — the HTML consolidates the set) --- */
+  --sh-card: 0 2px 10px rgba(27, 42, 107, .05), 0 1px 3px rgba(27, 42, 107, .04);
+  --sh-pop: 0 12px 30px rgba(27, 42, 107, .12);
+
+  /* --- Fonts --- */
+  --display: 'Sora', system-ui, sans-serif;
+  --body: 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* --- Motion (kept from prior tokens; the mockup uses inline durations) --- */
+  --dur-fast: 120ms;
+  --dur-normal: 200ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(0, 0, .2, 1);
+}
+
+[data-theme="dark"],
+body.dark {
+  /* --- Surfaces & structure — true-black palette, monochrome greys for
+     elevation. Each surface step is ~5–10% lighter than the one below so
+     cards separate from the page without pulling in any blue tint. --- */
+  --canvas: #000000;
+  --surface: #0F0F0F;
+  --soft: #171717;
+  --sunken: #0A0A0A;
+  --b-subtle: #1F1F1F;
+  --b-default: #2A2A2A;
+  --b-strong: #3A3A3A;
+
+  /* --- Content — pure light-on-black, muted greys for secondary text. --- */
+  --text: #F5F5F5;
+  --muted: #B5B5B5;
+  --subtle: #7A7A7A;
+  --disabled: #4D4D4D;
+  --link: #5B7BE8;
+  --ring: #5B7BE8;
+
+  /* --- Brand — rail gradient collapses to solid black. --- */
+  --ink: #000000;
+  --navy: #0A0A0A;
+
+  /* --- Chart series --- */
+  --bar1: #7E99DD;
+  --bar2: #5375D6;
+  --bar3: #9DB4EC;
+
+  /* --- Primary blue — kept saturated so buttons stay identifiable. --- */
+  --primary: #5B7BE8;
+  --primary-hover: #4866D8;
+  --primary-soft: #131A2F;
+  --on-primary: #FFFFFF;
+
+  /* --- Accents --- */
+  --accent: #7E99DD;
+  --accent-soft: #131A2F;
+  --teal: #3FC9B8;
+  --teal-soft: #0A1F1D;
+  --purple: #A98BF0;
+  --purple-soft: #1A122E;
+
+  /* --- Semantic status — soft variants dial down to near-black so they
+     read as tinted-black instead of colored panels. --- */
+  --success: #34C77B;
+  --success-soft: #0A1F14;
+  --warning: #E0A23C;
+  --warning-soft: #21170A;
+  --danger: #E76A6A;
+  --danger-soft: #241010;
+  --info: #5B8AF0;
+  --info-soft: #0E172F;
+
+  /* --- Shadows — heavier so cards lift off pure black. --- */
+  --sh-card: 0 2px 12px rgba(0, 0, 0, .55), 0 1px 3px rgba(0, 0, 0, .5);
+  --sh-pop: 0 14px 34px rgba(0, 0, 0, .7);
+}
+
+/* Global body background + subtle radial gradient — from the HTML. Kept as
+   ::before so components can layer above without repainting. */
+body {
+  font-family: var(--body);
+  background: var(--canvas);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(1100px 620px at 100% -8%, rgba(37, 71, 200, .06), transparent 60%),
+    radial-gradient(900px 520px at -8% 108%, rgba(63, 99, 198, .05), transparent 55%),
+    var(--canvas);
+}
+/* Dark mode strips the blue radial overlays — pure --canvas (black) all
+   the way to the edges, so the "all black" reads cleanly instead of the
+   old blue-tinted haze. */
+[data-theme="dark"] body::before,
+body.dark::before {
+  background: var(--canvas);
+}
+
+/* Row-glow — subtle primary-soft pulse on newly-inserted table rows. */
+@keyframes row-glow {
+  0%,
+  40% { background-color: var(--primary-soft); }
+  100% { background-color: transparent; }
+}
+.row-new { animation: row-glow 420ms ease-out; }
+
+/* Section fade — main content of every route on mount. Opacity-only so
+   the browser doesn't repaint the whole content tree on every nav (the
+   old translateY forced a paint of every card, table, chart). 260ms is
+   fast enough that nav feels instant but the fade still registers. */
+@keyframes section-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.section-in { animation: section-in 260ms ease-out both; }
+
+/* Staggered card entrance — used inside a strip/grid. Trimmed to keep the
+   whole strip settled well under 300ms. */
+@keyframes card-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.card-in { animation: card-in 220ms cubic-bezier(.22, 1, .36, 1) both; }
+
+/* Reduced-motion global. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

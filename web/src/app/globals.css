@@ -1,0 +1,63 @@
+@import "../styles/tokens.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base — every component below the root reads from tokens.css. */
+html,
+body {
+  background: var(--canvas);
+  color: var(--text);
+  font-family: var(--font-inter, Inter, system-ui, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100dvh;
+}
+
+/* --- Dynamic scrollbar (A-7): thin idle, thicker on hover/scroll.
+   Applied to the app main scroll container and any explicitly-marked scroll area.
+   Firefox honours `scrollbar-color`; WebKit uses the pseudo elements. */
+.sp-scroll,
+main {
+  scrollbar-width: thin;
+  scrollbar-color: var(--b-subtle) transparent;
+  transition: scrollbar-color var(--dur-fast) var(--ease-out);
+}
+.sp-scroll::-webkit-scrollbar,
+main::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+  transition: width var(--dur-fast) var(--ease-out), height var(--dur-fast) var(--ease-out);
+}
+.sp-scroll::-webkit-scrollbar-thumb,
+main::-webkit-scrollbar-thumb {
+  background: var(--b-subtle);
+  border-radius: var(--r-full);
+}
+.sp-scroll:hover::-webkit-scrollbar,
+.sp-scroll:focus-within::-webkit-scrollbar,
+main:hover::-webkit-scrollbar,
+main:focus-within::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.sp-scroll:hover::-webkit-scrollbar-thumb,
+main:hover::-webkit-scrollbar-thumb {
+  background: var(--b-strong);
+}
+
+/* Focus-visible: consistent 2px primary ring + 2px offset. */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: var(--r-md);
+}
+
+/* Selection highlight uses primary-soft for calmness. */
+::selection {
+  background: var(--primary-soft);
+  color: var(--primary-hover);
+}
