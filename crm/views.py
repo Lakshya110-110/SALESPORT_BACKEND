@@ -38,6 +38,22 @@ def request_otp(request):
     ser = RequestOTPSerializer(data=request.data)
     ser.is_valid(raise_exception=True)
     phone = normalize_phone(ser.validated_data["phone"])
+    # Only issue an OTP to a registered, active account — so the client (web or
+    # mobile) is rejected at the "Send OTP" step and never advances to the OTP
+    # screen for a number that can't sign in, and no SMS goes to a non-user.
+    # Login never creates accounts; admins add users via the Users page.
+    try:
+        user = User.objects.get(phone=phone)
+    except User.DoesNotExist:
+        return Response(
+            {"detail": "This number isn't registered. Ask an administrator to add you to the team."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    if not user.is_active:
+        return Response(
+            {"detail": "This account has been deactivated. Contact an administrator."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
     otp = OTP.issue(phone)
     result = get_otp_delivery_service().send_otp(phone=phone, code=otp.code)
     payload = {"detail": "OTP sent", "phone": phone}
@@ -68,7 +84,7 @@ def verify_otp(request):
     except User.DoesNotExist:
         return Response(
             {"detail": "This number isn't registered. Ask an administrator to add you to the team."},
-            status=status.HTTP_403_FORBIDDEN,
+            status=status.HTTP_404_NOT_FOUND,
         )
     # A deactivated account (Active toggle off) must not be able to sign in.
     if not user.is_active:
