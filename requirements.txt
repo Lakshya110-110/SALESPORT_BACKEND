@@ -5,9 +5,15 @@ django-cors-headers==4.3.1
 python-dotenv==1.0.1
 # ASGI server + realtime — see crm/sockets.py and salesport/asgi.py. Run with
 # `uvicorn salesport.asgi:application`, never `manage.py runserver` (WSGI-only,
-# can't serve /socket.io/ at all).
-uvicorn==0.32.1
+# can't serve /socket.io/ at all). uvicorn[standard] pulls in uvloop/httptools
+# for production performance, plus websockets — needed for /socket.io/.
+uvicorn[standard]==0.32.1
 python-socketio==5.11.4
+# Alternative process manager for the same ASGI app (gunicorn -k
+# uvicorn.workers.UvicornWorker) — more mature worker lifecycle/graceful
+# restart handling than plain uvicorn --workers. See DEPLOY.md for which one
+# we actually recommend; both are available either way.
+gunicorn==23.0.0
 # MySQL driver (SalesPort's DB). Needs system libs (default-libmysqlclient-dev).
 # Not required if you run with DB_ENGINE=sqlite for a quick demo.
 mysqlclient==2.2.4
@@ -21,3 +27,11 @@ redis==8.0.1
 # S3 file storage (FILE_STORAGE=s3) — inactive by default (filesystem).
 django-storages==1.14.6
 boto3==1.43.40
+# Static files in production — serves STATIC_ROOT from the app process
+# itself (compressed, cache-busted filenames) so a deploy doesn't need
+# nginx/S3 in front just for the admin/DRF-browsable-API's CSS and JS.
+whitenoise==6.7.0
+# Parses a single DATABASE_URL connection string (what most PaaS platforms
+# inject automatically) into Django's DATABASES format — an alternative to
+# setting the DB_* vars individually. See settings.py.
+dj-database-url==2.3.0

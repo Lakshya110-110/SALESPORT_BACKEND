@@ -6,6 +6,7 @@ Sort String Solutions LLP.
 from pathlib import Path
 from datetime import timedelta
 import os
+import warnings
 
 try:
     from dotenv import load_dotenv
@@ -20,9 +21,32 @@ def env(key, default=None):
     return os.environ.get(key, default)
 
 
+def env_bool(key, default):
+    return env(key, "True" if default else "False").lower() == "true"
+
+
+def env_list(key, default=""):
+    return [v.strip() for v in env(key, default).split(",") if v.strip()]
+
+
 SECRET_KEY = env("SECRET_KEY", "dev-insecure-change-me-in-production")
-DEBUG = env("DEBUG", "True").lower() == "true"
-ALLOWED_HOSTS = env("ALLOWED_HOSTS", "*").split(",")
+# Production must default closed: DEBUG leaks stack traces, SQL, and settings
+# to anyone who can trigger a 500. Local dev sets DEBUG=True explicitly in
+# its own .env (see .env.example) — this default only protects a deploy that
+# forgot to set the var at all.
+DEBUG = env_bool("DEBUG", False)
+if SECRET_KEY == "dev-insecure-change-me-in-production" and not DEBUG:
+    warnings.warn(
+        "DEBUG=False but SECRET_KEY is still the insecure default — set a "
+        "real SECRET_KEY in production.", RuntimeWarning,
+    )
+
+ALLOWED_HOSTS = env_list("ALLOWED_HOSTS", "*")
+if not DEBUG and ALLOWED_HOSTS == ["*"]:
+    warnings.warn(
+        "DEBUG=False but ALLOWED_HOSTS is still '*' — set it to the real "
+        "production domain(s) (see .env.example).", RuntimeWarning,
+    )
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -45,6 +69,12 @@ MIDDLEWARE = [
     # after CommonMiddleware writes headers. Halves API JSON payloads.
     "django.middleware.gzip.GZipMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    # WhiteNoise must sit directly after SecurityMiddleware (its own
+    # documented required position) so it can serve STATIC_ROOT itself —
+    # collected admin/DRF-browsable-API assets — without needing nginx or S3
+    # in front of the app just for CSS/JS. Media (user uploads) is separate,
+    # governed by FILE_STORAGE below.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -75,12 +105,23 @@ WSGI_APPLICATION = "salesport.wsgi.application"
 
 # ---------------------------------------------------------------------------
 # Database — MySQL (Khwaishein's current) with a SQLite fallback for quick demo.
-# Set DB_ENGINE=mysql (default) and the DB_* vars, OR DB_ENGINE=sqlite to run
-# instantly with no external database.
+#
+# Three ways in, checked in this order:
+#   1. DATABASE_URL — a single connection string. What most PaaS platforms
+#      (Render, Railway, Heroku-likes) inject automatically; set it and
+#      every DB_* var below is ignored.
+#   2. DB_ENGINE=mysql (default) + the DB_* vars — Khwaishein's own AWS/RDS
+#      setup, or any MySQL you point it at by hand.
+#   3. DB_ENGINE=sqlite, or DB_NAME simply left unset — runs instantly with
+#      no external database, for a quick local demo.
 # ---------------------------------------------------------------------------
+_database_url = env("DATABASE_URL", "")
 DB_ENGINE = env("DB_ENGINE", "mysql").lower()
 
-if DB_ENGINE == "sqlite" or not env("DB_NAME"):
+if _database_url:
+    import dj_database_url
+    DATABASES = {"default": dj_database_url.parse(_database_url, conn_max_age=600)}
+elif DB_ENGINE == "sqlite" or not env("DB_NAME"):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -97,8 +138,26 @@ else:
             "HOST": env("DB_HOST", "127.0.0.1"),
             "PORT": env("DB_PORT", "3306"),
             "OPTIONS": {"charset": "utf8mb4"},
+            "CONN_MAX_AGE": int(env("DB_CONN_MAX_AGE", "60")),
         }
     }
+
+# Managed MySQL providers (Aiven, PlanetScale, etc.) require TLS. Their
+# connection strings often carry a `?ssl-mode=REQUIRED` query param, which
+# dj_database_url passes straight into OPTIONS verbatim — but `ssl-mode`
+# (hyphen) isn't a real MySQLdb.connect() keyword, so leaving it in place
+# raises `TypeError: 'ssl-mode' is an invalid keyword argument` the moment
+# Django opens a connection. Drop it and use the correctly-named `ssl_mode`
+# (underscore) instead, driven by DB_SSL_MODE=REQUIRED (or VERIFY_CA/
+# VERIFY_IDENTITY) — works whether DATABASES came from DATABASE_URL or the
+# DB_* vars above, and means Aiven's connection string can be pasted in
+# verbatim. Left unset, behavior is unchanged (plain connection, e.g. local
+# MySQL).
+if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
+    DATABASES["default"].get("OPTIONS", {}).pop("ssl-mode", None)
+    _db_ssl_mode = env("DB_SSL_MODE", "")
+    if _db_ssl_mode:
+        DATABASES["default"].setdefault("OPTIONS", {})["ssl_mode"] = _db_ssl_mode
 
 AUTH_USER_MODEL = "crm.User"
 
@@ -112,6 +171,14 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+# collectstatic's target — WhiteNoise serves everything under here directly
+# from the app process, so a deploy doesn't need nginx/S3 in front just to
+# serve the Django admin's / DRF browsable API's CSS and JS.
+STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = (
+    "whitenoise.storage.CompressedManifestStaticFilesStorage" if not DEBUG
+    else "django.contrib.staticfiles.storage.StaticFilesStorage"
+)
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ---------------------------------------------------------------------------
@@ -188,6 +255,14 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 25,
+    # The HTML browsable API is a dev convenience (click-through forms in a
+    # browser) that also happens to render an explorable map of every
+    # endpoint — fine locally, unnecessary surface area on a public server.
+    # JSON-only in production; both renderers still available in DEBUG.
+    "DEFAULT_RENDERER_CLASSES": (
+        ("rest_framework.renderers.JSONRenderer",) if not DEBUG else
+        ("rest_framework.renderers.JSONRenderer", "rest_framework.renderers.BrowsableAPIRenderer")
+    ),
 }
 
 SIMPLE_JWT = {
@@ -216,13 +291,71 @@ if USE_REDIS:
 else:
     CACHES = {"default": {"BACKEND": "django.core.cache.backends.locmem.LocMemCache"}}
 
-# OTP settings (demo-friendly)
+# ---------------------------------------------------------------------------
+# OTP delivery — see crm/otp_delivery.py for the swappable send_otp
+# interface. No real SMS gateway is wired up yet, so:
+#   - OTP_RETURN_IN_RESPONSE defaults to True in local dev (DEBUG=True, so
+#     you can log in without an SMS provider) and False everywhere else —
+#     a production deploy that forgets to set it never echoes a code.
+#   - OTP_TEST_PHONE_NUMBERS, if set, restricts echoing to just those
+#     numbers even when OTP_RETURN_IN_RESPONSE=True — lets a staging server
+#     with real users log in via a handful of team test numbers without
+#     leaking anyone else's OTP. Leave unset for local dev (every number
+#     echoes, today's convenience, unchanged).
+#   - OTP_PROVIDER selects a real gateway (e.g. "msg91", "twilio") once one
+#     is actually implemented in crm/otp_delivery.py — TODO, not built yet.
+# ---------------------------------------------------------------------------
 OTP_TTL_SECONDS = int(env("OTP_TTL_SECONDS", "300"))
-OTP_RETURN_IN_RESPONSE = env("OTP_RETURN_IN_RESPONSE", "True").lower() == "true"
+OTP_RETURN_IN_RESPONSE = env_bool("OTP_RETURN_IN_RESPONSE", DEBUG)
+OTP_TEST_PHONE_NUMBERS = env_list("OTP_TEST_PHONE_NUMBERS")
+OTP_PROVIDER = env("OTP_PROVIDER", "")
 
-# CORS — allow the web + mobile clients during development
-CORS_ALLOW_ALL_ORIGINS = env("CORS_ALLOW_ALL_ORIGINS", "True").lower() == "true"
-CORS_ALLOWED_ORIGINS = [o for o in env("CORS_ALLOWED_ORIGINS", "").split(",") if o]
+# ---------------------------------------------------------------------------
+# CORS — wildcard is a local-dev convenience only. In production
+# (DEBUG=False) CORS_ALLOW_ALL_ORIGINS is forced off regardless of the env
+# var; only the explicit origins in CORS_ALLOWED_ORIGINS (the deployed web
+# app's URL — e.g. Vercel) are allowed. An empty allow-list in production
+# means no browser can call this API at all, so that misconfiguration is
+# flagged loudly below rather than failing silently per-request.
+# ---------------------------------------------------------------------------
+CORS_ALLOW_ALL_ORIGINS = DEBUG and env_bool("CORS_ALLOW_ALL_ORIGINS", True)
+CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS")
+if not DEBUG and not CORS_ALLOW_ALL_ORIGINS and not CORS_ALLOWED_ORIGINS:
+    warnings.warn(
+        "DEBUG=False but CORS_ALLOWED_ORIGINS is empty — no browser-based "
+        "client (the web app) will be able to call this API. Set it to "
+        "your deployed web app's origin(s), e.g. https://your-app.vercel.app",
+        RuntimeWarning,
+    )
+
+# ---------------------------------------------------------------------------
+# Security hardening — all gated on DEBUG so local dev (plain HTTP,
+# localhost) is never affected. In production these assume the app runs
+# behind a TLS-terminating reverse proxy / load balancer (ALB, Render,
+# Railway, etc.) that forwards X-Forwarded-Proto, which
+# SECURE_PROXY_SSL_HEADER tells Django to trust for its own HTTPS checks —
+# without it, SECURE_SSL_REDIRECT and the *_COOKIE_SECURE flags below would
+# see every request as plain HTTP (the proxy-to-app hop) and either loop on
+# redirects or refuse to set cookies at all.
+# ---------------------------------------------------------------------------
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", True)
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    # 1 year, ramp down via env if HSTS ever needs to be backed out.
+    SECURE_HSTS_SECONDS = int(env("SECURE_HSTS_SECONDS", "31536000"))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", True)
+    SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", True)
+else:
+    SECURE_SSL_REDIRECT = False
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SECURE_HSTS_SECONDS = 0
+
+# Same in both environments — the app is never meant to be framed.
+X_FRAME_OPTIONS = "DENY"
 
 # ---------------------------------------------------------------------------
 # Outbound notifications — stubbed, unused for now. crm/notifications.py's
@@ -258,4 +391,25 @@ Q_CLUSTER = {
     **({"django_redis": "default"} if USE_REDIS else {"orm": "default"}),
     "sync": env("Q_SYNC", "False").lower() == "true",
     "catch_up": False,
+}
+
+# ---------------------------------------------------------------------------
+# Logging — everything to stdout/stderr via Django's own default formatters.
+# Every cloud host (ECS, Render, Railway, ...) captures container stdout as
+# the log stream, so this is the whole story for "logs are visible in
+# production" — no file paths, no log-shipping config to maintain here.
+# ---------------------------------------------------------------------------
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": env("DJANGO_LOG_LEVEL", "INFO"),
+    },
+    "loggers": {
+        "django.server": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
 }
