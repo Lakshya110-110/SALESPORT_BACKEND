@@ -60,24 +60,31 @@ def verify_otp(request):
     otp.is_used = True
     otp.save(update_fields=["is_used"])
 
-    # A brand-new phone is auto-provisioned as a consultant — never as the
-    # role the client asked for. Trusting a client-supplied role here let any
-    # caller (web OR mobile) self-register as admin. Admins are created via
-    # createsuperuser / seed_demo / promotion by an existing admin, not by the
-    # login endpoint. Existing users keep their stored role (get_or_create
-    # ignores `defaults` when a row already matches).
-    user, created = User.objects.get_or_create(
-        phone=phone,
-        defaults={"name": "New User", "role": "consultant"},
-    )
-    if created:
-        emit_user_created(user)
+    # Login does NOT create accounts. Only a phone that an admin has already
+    # added to the team can sign in — otherwise anyone who can receive an OTP
+    # could self-provision a consultant account (from web OR the mobile app).
+    # Admins create users via the Users page (POST /api/users/, IsAdminRole);
+    # the first admin comes from createsuperuser / seed_demo.
+    try:
+        user = User.objects.get(phone=phone)
+    except User.DoesNotExist:
+        return Response(
+            {"detail": "No account exists for this number. Ask an administrator to add you to the team."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+    # A deactivated account (Active toggle off) must not be able to sign in.
+    if not user.is_active:
+        return Response(
+            {"detail": "This account has been deactivated. Contact an administrator."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
     refresh = RefreshToken.for_user(user)
     return Response({
         "access": str(refresh.access_token),
         "refresh": str(refresh),
         "user": UserSerializer(user).data,
-        "new_user": created,
+        "new_user": False,
     })
 
 
