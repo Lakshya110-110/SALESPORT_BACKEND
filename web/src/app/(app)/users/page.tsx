@@ -11,7 +11,7 @@ import { endpoints } from '@/lib/api/endpoints';
 import { session } from '@/lib/auth/session';
 import { avatarColor, initials, fmtPhone } from '@/lib/utils/format';
 import { cn } from '@/lib/utils/cn';
-import type { User } from '@/lib/api/types';
+import type { Paginated, User } from '@/lib/api/types';
 
 /**
  * Users — /users.
@@ -34,10 +34,30 @@ export default function UsersPage() {
     queryFn: () => endpoints.users.list({ page_size: 100 }),
   });
 
+  const [toggleError, setToggleError] = useState<string | null>(null);
+
   const toggle = useMutation({
     mutationFn: ({ id, is_active }: { id: number; is_active: boolean }) =>
       endpoints.users.patch(id, { is_active }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['users'] }),
+    // Flip the switch immediately (optimistic), then reconcile with the server.
+    // Without this the knob only moves after a full PATCH+refetch round-trip,
+    // so it feels unresponsive / "stuck". On failure we roll back and show why.
+    onMutate: async ({ id, is_active }) => {
+      setToggleError(null);
+      await qc.cancelQueries({ queryKey: ['users', 'list'] });
+      const prev = qc.getQueryData<Paginated<User>>(['users', 'list']);
+      qc.setQueryData<Paginated<User>>(['users', 'list'], (old) =>
+        old
+          ? { ...old, results: old.results.map((u) => (u.id === id ? { ...u, is_active } : u)) }
+          : old,
+      );
+      return { prev };
+    },
+    onError: (err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(['users', 'list'], ctx.prev);
+      setToggleError(err instanceof Error ? err.message : 'Could not update the user. Please try again.');
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ['users'] }),
   });
 
   const rows = q.data?.results ?? [];
@@ -57,6 +77,11 @@ export default function UsersPage() {
       />
 
       <div className="w-full px-3 pt-3 pb-5 xl:px-4">
+        {toggleError && (
+          <div className="mb-3 rounded-md bg-danger-soft p-2 text-[12px] text-danger">
+            {toggleError}
+          </div>
+        )}
         <div className="rounded-card border border-b-subtle bg-surface shadow-sm">
           <table className="w-full text-[12.5px]">
             <thead>
