@@ -54,22 +54,20 @@ def verify_otp(request):
     phone = normalize_phone(ser.validated_data["phone"])
     code = ser.validated_data["code"].strip()
 
-    otp = OTP.objects.filter(phone=phone, code=code, is_used=False).order_by("-created_at").first()
-    if not otp or not otp.is_valid(settings.OTP_TTL_SECONDS):
-        return Response({"detail": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
-    otp.is_used = True
-    otp.save(update_fields=["is_used"])
-
-    # Login does NOT create accounts. Only a phone that an admin has already
-    # added to the team can sign in — otherwise anyone who can receive an OTP
-    # could self-provision a consultant account (from web OR the mobile app).
-    # Admins create users via the Users page (POST /api/users/, IsAdminRole);
-    # the first admin comes from createsuperuser / seed_demo.
+    # Check the account FIRST — before validating/consuming the OTP — so an
+    # unregistered number always gets a clear "not registered" message instead
+    # of falling through to "invalid or expired OTP" (which happens once the
+    # code has been consumed by a prior attempt or has aged out). Login never
+    # creates accounts: only a phone an admin has already added can sign in,
+    # otherwise anyone who can receive an OTP could self-provision an account
+    # (web OR the mobile app). Admins add users via the Users page
+    # (POST /api/users/, IsAdminRole); the first admin comes from
+    # createsuperuser / seed_demo.
     try:
         user = User.objects.get(phone=phone)
     except User.DoesNotExist:
         return Response(
-            {"detail": "No account exists for this number. Ask an administrator to add you to the team."},
+            {"detail": "This number isn't registered. Ask an administrator to add you to the team."},
             status=status.HTTP_403_FORBIDDEN,
         )
     # A deactivated account (Active toggle off) must not be able to sign in.
@@ -78,6 +76,12 @@ def verify_otp(request):
             {"detail": "This account has been deactivated. Contact an administrator."},
             status=status.HTTP_403_FORBIDDEN,
         )
+
+    otp = OTP.objects.filter(phone=phone, code=code, is_used=False).order_by("-created_at").first()
+    if not otp or not otp.is_valid(settings.OTP_TTL_SECONDS):
+        return Response({"detail": "Invalid or expired OTP"}, status=status.HTTP_400_BAD_REQUEST)
+    otp.is_used = True
+    otp.save(update_fields=["is_used"])
 
     refresh = RefreshToken.for_user(user)
     return Response({
