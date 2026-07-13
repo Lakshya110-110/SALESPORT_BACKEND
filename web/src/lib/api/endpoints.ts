@@ -156,6 +156,7 @@ export const endpoints = {
     create: (data: Partial<User> & { phone: string; name: string }) =>
       api.post<User>('/users/', data),
     patch: (id: number, data: Partial<User>) => api.patch<User>(`/users/${id}/`, data),
+    remove: (id: number) => api.delete<void>(`/users/${id}/`),
   },
 
   // ----- Master data (writes) -----

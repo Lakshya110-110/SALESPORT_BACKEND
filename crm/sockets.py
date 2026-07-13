@@ -150,6 +150,12 @@ def emit_user_updated(user) -> None:
     async_to_sync(sio.emit)("user:updated", UserSerializer(user).data, room=[_role_room("admin")])
 
 
+def emit_user_deleted(user_id: int) -> None:
+    """Push a user removal to the Users page — admin-only. Id-only payload:
+    the row is gone, so clients just drop it / refetch the roster."""
+    async_to_sync(sio.emit)("user:deleted", {"id": user_id}, room=[_role_room("admin")])
+
+
 def emit_enquiry_action(enquiry, event: str, payload: dict) -> None:
     """Push a specific, payload-carrying event for something that happened
     inside one enquiry (a new touchpoint, a status flip, a meeting created

@@ -124,6 +124,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     socket.on('enquiry_updated', onEnquiryUpdated);
     socket.on('user:created', onUsersChanged);
     socket.on('user:updated', onUsersChanged);
+    socket.on('user:deleted', onUsersChanged);
     socket.on('touchpoint:created', onTouchpointCreated);
     socket.on('enquiry:round_logged', onNegotiationCreated);
     socket.on('enquiry:status_changed', onEnquiryStatusChanged);
@@ -135,6 +136,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       socket.off('enquiry_updated', onEnquiryUpdated);
       socket.off('user:created', onUsersChanged);
       socket.off('user:updated', onUsersChanged);
+      socket.off('user:deleted', onUsersChanged);
       socket.off('touchpoint:created', onTouchpointCreated);
       socket.off('enquiry:round_logged', onNegotiationCreated);
       socket.off('enquiry:status_changed', onEnquiryStatusChanged);

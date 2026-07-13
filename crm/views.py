@@ -23,7 +23,7 @@ from .permissions import IsAdminRole
 from .phone import normalize_phone
 from .sockets import (
     emit_notification, emit_enquiry_event, emit_enquiry_action,
-    emit_user_created, emit_user_updated,
+    emit_user_created, emit_user_updated, emit_user_deleted,
 )
 from .notifications import get_notification_service
 from .otp_delivery import get_otp_delivery_service
@@ -117,6 +117,24 @@ class UserViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         user = serializer.save()
         emit_user_updated(user)
+
+    def destroy(self, request, *args, **kwargs):
+        user = self.get_object()
+        # Guard against self-deletion: an admin removing their own account would
+        # lock themselves out mid-session, and it's the only account guaranteed
+        # to still be an admin — so this also keeps at least one admin around.
+        if user.id == request.user.id:
+            return Response(
+                {"detail": "You cannot delete your own account."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Safe hard delete: every ownership FK (enquiry.owner, meeting.consultant,
+        # touchpoint/round/follow-up created_by) is SET_NULL, so their work is
+        # preserved (just unassigned); only the user's own notifications cascade.
+        user_id = user.id
+        user.delete()
+        emit_user_deleted(user_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class CompanyViewSet(viewsets.ModelViewSet):

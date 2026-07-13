@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { Pencil, Plus, ShieldCheck, Trash2, User as UserIcon } from 'lucide-react';
 import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -26,6 +26,7 @@ export default function UsersPage() {
   const isAdmin = currentUser?.role === 'admin';
   const [newOpen, setNewOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
+  const [deleteUser, setDeleteUser] = useState<User | null>(null);
   const qc = useQueryClient();
 
   const q = useQuery({
@@ -64,7 +65,7 @@ export default function UsersPage() {
                 <Th>Phone</Th>
                 <Th>Email</Th>
                 <Th>Role</Th>
-                <Th>Edit</Th>
+                <Th>Actions</Th>
                 <Th className="text-right">Active</Th>
               </tr>
             </thead>
@@ -104,15 +105,28 @@ export default function UsersPage() {
                     </Td>
                     <Td>
                       {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => setEditUser(u)}
-                          className="flex h-8 w-8 items-center justify-center rounded-md text-subtle hover:bg-soft hover:text-primary"
-                          aria-label={`Edit ${u.name}`}
-                          title="Edit user"
-                        >
-                          <Pencil size={16} />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setEditUser(u)}
+                            className="flex h-8 w-8 items-center justify-center rounded-md text-subtle hover:bg-soft hover:text-primary"
+                            aria-label={`Edit ${u.name}`}
+                            title="Edit user"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                          {u.id !== currentUser?.id && (
+                            <button
+                              type="button"
+                              onClick={() => setDeleteUser(u)}
+                              className="flex h-8 w-8 items-center justify-center rounded-md text-subtle hover:bg-danger-soft hover:text-danger"
+                              aria-label={`Delete ${u.name}`}
+                              title="Delete user"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
                       )}
                     </Td>
                     <Td className="text-right">
@@ -142,6 +156,9 @@ export default function UsersPage() {
       {isAdmin && <NewUserModal open={newOpen} onClose={() => setNewOpen(false)} />}
       {isAdmin && editUser && (
         <EditUserModal user={editUser} open={!!editUser} onClose={() => setEditUser(null)} />
+      )}
+      {isAdmin && deleteUser && (
+        <DeleteUserModal user={deleteUser} open={!!deleteUser} onClose={() => setDeleteUser(null)} />
       )}
     </>
   );
@@ -309,6 +326,50 @@ function EditUserModal({ user, open, onClose }: { user: User; open: boolean; onC
           </div>
         )}
       </form>
+    </Modal>
+  );
+}
+
+function DeleteUserModal({ user, open, onClose }: { user: User; open: boolean; onClose: () => void }) {
+  const qc = useQueryClient();
+
+  const remove = useMutation({
+    mutationFn: () => endpoints.users.remove(user.id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['users'] });
+      onClose();
+    },
+  });
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Delete user"
+      size="sm"
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button type="button" variant="danger" loading={remove.isPending} onClick={() => remove.mutate()}>
+            Delete
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3 text-[13px] text-text">
+        <p>
+          Permanently delete <span className="font-semibold">{user.name}</span> ({fmtPhone(user.phone)})?
+        </p>
+        <p className="text-[12px] text-subtle">
+          Their enquiries, meetings and activity are kept but become unassigned. This can&apos;t be undone.
+          To temporarily disable access instead, use the Active toggle.
+        </p>
+        {remove.error && (
+          <div className="rounded-md bg-danger-soft p-2 text-[12px] text-danger">
+            {(remove.error as Error).message}
+          </div>
+        )}
+      </div>
     </Modal>
   );
 }
