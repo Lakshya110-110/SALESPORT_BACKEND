@@ -61,7 +61,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       qc.invalidateQueries({ queryKey: ['enquiries'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
     };
-    const onUserCreated = () => qc.invalidateQueries({ queryKey: ['users'] });
+    // Both a new user and an edit to an existing one just mean "the roster
+    // changed, refetch" — same handler for user:created and user:updated.
+    const onUsersChanged = () => qc.invalidateQueries({ queryKey: ['users'] });
 
     // Fine-grained, payload-carrying pushes for things that happen INSIDE
     // one enquiry (crm/sockets.py's emit_enquiry_action). Each merges
@@ -120,7 +122,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
     socket.on('notification', onNotification);
     socket.on('enquiry_updated', onEnquiryUpdated);
-    socket.on('user:created', onUserCreated);
+    socket.on('user:created', onUsersChanged);
+    socket.on('user:updated', onUsersChanged);
     socket.on('touchpoint:created', onTouchpointCreated);
     socket.on('enquiry:round_logged', onNegotiationCreated);
     socket.on('enquiry:status_changed', onEnquiryStatusChanged);
@@ -130,7 +133,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => {
       socket.off('notification', onNotification);
       socket.off('enquiry_updated', onEnquiryUpdated);
-      socket.off('user:created', onUserCreated);
+      socket.off('user:created', onUsersChanged);
+      socket.off('user:updated', onUsersChanged);
       socket.off('touchpoint:created', onTouchpointCreated);
       socket.off('enquiry:round_logged', onNegotiationCreated);
       socket.off('enquiry:status_changed', onEnquiryStatusChanged);

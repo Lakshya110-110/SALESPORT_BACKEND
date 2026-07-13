@@ -140,6 +140,16 @@ def emit_user_created(user) -> None:
     async_to_sync(sio.emit)("user:created", UserSerializer(user).data, room=[_role_room("admin")])
 
 
+def emit_user_updated(user) -> None:
+    """Push an edited user (name/phone/email/role/active changed) to the Users
+    page — admin-only, same room as emit_user_created. Without this, a user
+    edited on one client (web) never live-updates on any other client (a second
+    web session or the mobile app), since only creates were being broadcast."""
+    from .serializers import UserSerializer
+
+    async_to_sync(sio.emit)("user:updated", UserSerializer(user).data, room=[_role_room("admin")])
+
+
 def emit_enquiry_action(enquiry, event: str, payload: dict) -> None:
     """Push a specific, payload-carrying event for something that happened
     inside one enquiry (a new touchpoint, a status flip, a meeting created

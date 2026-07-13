@@ -21,7 +21,10 @@ from .serializers import (
 )
 from .permissions import IsAdminRole
 from .phone import normalize_phone
-from .sockets import emit_notification, emit_enquiry_event, emit_enquiry_action, emit_user_created
+from .sockets import (
+    emit_notification, emit_enquiry_event, emit_enquiry_action,
+    emit_user_created, emit_user_updated,
+)
 from .notifications import get_notification_service
 from .otp_delivery import get_otp_delivery_service
 
@@ -110,6 +113,10 @@ class UserViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         user = serializer.save()
         emit_user_created(user)
+
+    def perform_update(self, serializer):
+        user = serializer.save()
+        emit_user_updated(user)
 
 
 class CompanyViewSet(viewsets.ModelViewSet):
