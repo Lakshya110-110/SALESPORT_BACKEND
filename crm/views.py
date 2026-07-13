@@ -20,6 +20,7 @@ from .serializers import (
     RequestOTPSerializer, VerifyOTPSerializer,
 )
 from .permissions import IsAdminRole
+from .phone import normalize_phone
 from .sockets import emit_notification, emit_enquiry_event, emit_enquiry_action, emit_user_created
 from .notifications import get_notification_service
 from .otp_delivery import get_otp_delivery_service
@@ -33,7 +34,7 @@ from .otp_delivery import get_otp_delivery_service
 def request_otp(request):
     ser = RequestOTPSerializer(data=request.data)
     ser.is_valid(raise_exception=True)
-    phone = ser.validated_data["phone"].strip()
+    phone = normalize_phone(ser.validated_data["phone"])
     otp = OTP.issue(phone)
     result = get_otp_delivery_service().send_otp(phone=phone, code=otp.code)
     payload = {"detail": "OTP sent", "phone": phone}
@@ -47,9 +48,8 @@ def request_otp(request):
 def verify_otp(request):
     ser = VerifyOTPSerializer(data=request.data)
     ser.is_valid(raise_exception=True)
-    phone = ser.validated_data["phone"].strip()
+    phone = normalize_phone(ser.validated_data["phone"])
     code = ser.validated_data["code"].strip()
-    role = ser.validated_data.get("role", "consultant")
 
     otp = OTP.objects.filter(phone=phone, code=code, is_used=False).order_by("-created_at").first()
     if not otp or not otp.is_valid(settings.OTP_TTL_SECONDS):
@@ -57,9 +57,15 @@ def verify_otp(request):
     otp.is_used = True
     otp.save(update_fields=["is_used"])
 
+    # A brand-new phone is auto-provisioned as a consultant — never as the
+    # role the client asked for. Trusting a client-supplied role here let any
+    # caller (web OR mobile) self-register as admin. Admins are created via
+    # createsuperuser / seed_demo / promotion by an existing admin, not by the
+    # login endpoint. Existing users keep their stored role (get_or_create
+    # ignores `defaults` when a row already matches).
     user, created = User.objects.get_or_create(
         phone=phone,
-        defaults={"name": "New User", "role": role},
+        defaults={"name": "New User", "role": "consultant"},
     )
     if created:
         emit_user_created(user)

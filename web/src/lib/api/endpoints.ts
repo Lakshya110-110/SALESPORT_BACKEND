@@ -23,8 +23,8 @@ export const endpoints = {
   // ----- Auth -----
   requestOtp: (phone: string) =>
     api.post<OtpRequestResponse>('/auth/request-otp/', { phone }),
-  verifyOtp: (phone: string, code: string, role: 'admin' | 'consultant' = 'admin') =>
-    api.post<VerifyOtpResponse>('/auth/verify-otp/', { phone, code, role }),
+  verifyOtp: (phone: string, code: string) =>
+    api.post<VerifyOtpResponse>('/auth/verify-otp/', { phone, code }),
   me: () => api.get<User>('/auth/me/'),
 
   // ----- Dashboard -----

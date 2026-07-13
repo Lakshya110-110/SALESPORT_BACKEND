@@ -45,7 +45,7 @@ export function LoginPanel() {
   });
 
   const verifyOtp = useMutation({
-    mutationFn: () => endpoints.verifyOtp(rawPhone, code, 'admin'),
+    mutationFn: () => endpoints.verifyOtp(rawPhone, code),
     onSuccess: (data) => {
       if (data.user.role !== 'admin') {
         setError('This number is registered as a Consultant. Please use the mobile field app.');

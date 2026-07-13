@@ -8,6 +8,8 @@ from django.utils import timezone
 from datetime import timedelta
 import random
 
+from .phone import normalize_phone
+
 
 # ---------------------------------------------------------------------------
 # Users (phone-based auth, roles admin / consultant)
@@ -51,6 +53,12 @@ class User(AbstractBaseUser, PermissionsMixin):
     class Meta:
         ordering = ["name"]
 
+    def save(self, *args, **kwargs):
+        # Canonicalize so the web (10-digit) and mobile (E.164) logins, plus
+        # admin-entered numbers, all resolve to a single unique row.
+        self.phone = normalize_phone(self.phone)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name} ({self.phone})"
 
@@ -72,7 +80,7 @@ class OTP(models.Model):
     @classmethod
     def issue(cls, phone):
         code = f"{random.randint(0, 999999):06d}"
-        return cls.objects.create(phone=phone, code=code)
+        return cls.objects.create(phone=normalize_phone(phone), code=code)
 
     def is_valid(self, ttl_seconds=300):
         if self.is_used:

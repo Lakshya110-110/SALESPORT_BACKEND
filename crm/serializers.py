@@ -246,4 +246,6 @@ class RequestOTPSerializer(serializers.Serializer):
 class VerifyOTPSerializer(serializers.Serializer):
     phone = serializers.CharField(max_length=15)
     code = serializers.CharField(max_length=6)
-    role = serializers.ChoiceField(choices=["admin", "consultant"], required=False)
+    # No `role` field: the login endpoint must not let a client choose its own
+    # role (that allowed self-registering as admin). New users default to
+    # consultant server-side; see verify_otp in views.py.
