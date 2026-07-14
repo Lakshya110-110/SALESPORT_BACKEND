@@ -48,7 +48,7 @@ export function LoginPanel() {
     mutationFn: () => endpoints.verifyOtp(rawPhone, code),
     onSuccess: (data) => {
       if (data.user.role !== 'admin') {
-        setError('This number is registered as a Consultant. Please use the mobile field app.');
+        setError('This account does not have web console access. Please use the mobile app.');
         return;
       }
       session.saveTokens(data.access, data.refresh, keepSignedIn);

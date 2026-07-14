@@ -34,7 +34,13 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    ROLE_CHOICES = [("admin", "Admin"), ("consultant", "Consultant")]
+    ROLE_CHOICES = [
+        ("admin", "Admin"),
+        ("manager", "Manager"),
+        ("founder", "Founder"),
+        ("sales_head", "Sales Head"),
+        ("consultant", "Consultant"),
+    ]
 
     phone = models.CharField(max_length=15, unique=True)
     name = models.CharField(max_length=120)

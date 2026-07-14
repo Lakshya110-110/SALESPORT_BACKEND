@@ -16,7 +16,7 @@ export type User = {
   phone: string;
   name: string;
   email: string;
-  role: 'admin' | 'consultant';
+  role: 'admin' | 'manager' | 'founder' | 'sales_head' | 'consultant';
   avatar_color: string;
   initials: string;
   is_active: boolean;

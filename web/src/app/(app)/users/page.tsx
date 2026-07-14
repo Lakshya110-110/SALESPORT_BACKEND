@@ -189,6 +189,17 @@ export default function UsersPage() {
   );
 }
 
+// Roles must match the backend User.ROLE_CHOICES wire values exactly. Order is
+// field-role → management → admin. Labels are the human-readable display text.
+const ROLE_OPTIONS = ['consultant', 'sales_head', 'manager', 'founder', 'admin'] as const;
+const ROLE_LABELS: Record<User['role'], string> = {
+  consultant: 'Consultant',
+  sales_head: 'Sales Head',
+  manager: 'Manager',
+  founder: 'Founder',
+  admin: 'Admin',
+};
+
 function RoleBadge({ role }: { role: User['role'] }) {
   return (
     <span
@@ -198,7 +209,7 @@ function RoleBadge({ role }: { role: User['role'] }) {
       )}
     >
       {role === 'admin' ? <ShieldCheck size={11} /> : <UserIcon size={11} />}
-      {role}
+      {ROLE_LABELS[role] ?? role}
     </span>
   );
 }
@@ -207,7 +218,7 @@ function NewUserModal({ open, onClose }: { open: boolean; onClose: () => void })
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'admin' | 'consultant'>('consultant');
+  const [role, setRole] = useState<User['role']>('consultant');
   const qc = useQueryClient();
 
   const reset = () => {
@@ -264,20 +275,20 @@ function NewUserModal({ open, onClose }: { open: boolean; onClose: () => void })
           <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputCls} />
         </Field>
         <Field label="Role" required>
-          <div className="flex gap-2">
-            {(['consultant', 'admin'] as const).map((r) => (
+          <div className="flex flex-wrap gap-2">
+            {ROLE_OPTIONS.map((r) => (
               <button
                 key={r}
                 type="button"
                 onClick={() => setRole(r)}
                 className={cn(
-                  'flex-1 rounded-md border py-2 text-[13px] font-semibold',
+                  'rounded-md border px-3 py-2 text-[13px] font-semibold',
                   role === r
                     ? 'border-primary bg-primary-soft text-primary'
                     : 'border-b-default bg-surface text-muted hover:bg-soft',
                 )}
               >
-                {r}
+                {ROLE_LABELS[r]}
               </button>
             ))}
           </div>
