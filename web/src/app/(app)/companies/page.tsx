@@ -61,7 +61,7 @@ export default function CompaniesPage() {
 
       <div className="w-full px-3 pt-3 pb-5 xl:px-4">
         <div className="rounded-card border border-b-subtle bg-surface shadow-sm">
-          <div className="flex flex-wrap items-center gap-2 border-b border-b-subtle p-3">
+          <div className="sticky top-[76px] z-20 flex items-center gap-2 rounded-t-card border-b border-b-subtle bg-surface p-3">
             <input
               placeholder="Search company / GSTIN / city…"
               defaultValue={search}
@@ -70,7 +70,7 @@ export default function CompaniesPage() {
                   setParam({ search: (e.target as HTMLInputElement).value.trim() || null });
                 }
               }}
-              className="h-9 w-72 rounded-md border border-b-subtle bg-soft px-3 text-sm text-text placeholder:text-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-soft"
+              className="h-9 w-72 shrink-0 rounded-md border border-b-subtle bg-soft px-3 text-sm text-text placeholder:text-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-soft"
             />
             <IndustryChips value={industry} onPick={(v) => setParam({ industry: v })} />
           </div>
@@ -146,7 +146,7 @@ function IndustryChips({
 }) {
   const industries = useMasterDataValues('industry', INDUSTRIES_FALLBACK);
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
+    <div className="flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto sp-scroll">
       <ChipBtn active={!value} onClick={() => onPick(null)}>All</ChipBtn>
       {industries.map((i) => (
         <ChipBtn key={i} active={value === i} onClick={() => onPick(value === i ? null : i)}>
@@ -171,7 +171,7 @@ function ChipBtn({
       type="button"
       onClick={onClick}
       className={cn(
-        'rounded-full px-2.5 py-1 text-[11.5px] font-semibold',
+        'shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-[11.5px] font-semibold',
         active ? 'bg-primary-soft text-primary' : 'bg-soft text-muted hover:bg-sunken',
       )}
     >
@@ -284,7 +284,7 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
   return (
     <th
       className={cn(
-        'sticky top-[76px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
+        'sticky top-[137px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
         'shadow-[inset_0_-1px_0_var(--b-default)]',
         className,
       )}
