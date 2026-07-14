@@ -87,7 +87,7 @@ export default function CompaniesPage() {
 
       <div className="w-full px-3 pt-3 pb-5 xl:px-4">
         <div className="rounded-card border border-b-subtle bg-surface shadow-sm">
-          <div className="sticky top-[76px] z-20 flex items-center gap-2 rounded-t-card border-b border-b-subtle bg-surface p-3">
+          <div className="sticky top-[70px] z-20 flex items-center gap-2 rounded-t-card border-b border-b-subtle bg-surface p-3">
             <SearchPill
               value={searchInput}
               onChange={setSearchInput}
@@ -306,7 +306,7 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
   return (
     <th
       className={cn(
-        'sticky top-[141px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
+        'sticky top-[130px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
         'shadow-[inset_0_-1px_0_var(--b-default)]',
         className,
       )}

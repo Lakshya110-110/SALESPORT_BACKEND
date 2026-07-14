@@ -112,7 +112,7 @@ export default function UsersPage() {
         <div className="rounded-card border border-b-subtle bg-surface shadow-sm">
           {/* Search + filters — sticky under the 76px section header so they
               stay visible while the list scrolls; column headers dock below. */}
-          <div className="sticky top-[76px] z-20 flex items-center gap-2 rounded-t-card border-b border-b-subtle bg-surface p-3">
+          <div className="sticky top-[70px] z-20 flex items-center gap-2 rounded-t-card border-b border-b-subtle bg-surface p-3">
             <SearchPill value={search} onChange={setSearch} placeholder="Search name / phone / email…" />
             <select
               value={roleFilter}
@@ -496,7 +496,7 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
   return (
     <th
       className={cn(
-        'sticky top-[141px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
+        'sticky top-[130px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
         'shadow-[inset_0_-1px_0_var(--b-default)]',
         className,
       )}
