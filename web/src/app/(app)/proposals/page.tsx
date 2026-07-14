@@ -23,12 +23,9 @@ import type { EnquiryListItem, Proposal } from '@/lib/api/types';
  * against a chosen enquiry (Phase 8 will replace the `file_url` text field
  * with real S3 upload; today it stores metadata + a client-side data URL).
  */
-const PROPOSAL_STATUSES: Array<Proposal['status']> = ['Draft', 'Sent', 'Viewed', 'Accepted', 'Rejected'];
-
 export default function ProposalsPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'' | Proposal['status']>('');
   const q = useQuery({
     queryKey: ['proposals', 'list'],
     queryFn: () => endpoints.proposals.list({ page_size: 100 }),
@@ -41,11 +38,9 @@ export default function ProposalsPage() {
     awaiting:  rows.filter((p) => p.status === 'Sent' || p.status === 'Draft').length,
   };
   const s = search.trim().toLowerCase();
-  const filtered = rows.filter((p) => {
-    const matchesSearch = !s || (p.title ?? '').toLowerCase().includes(s) || String(p.enquiry).includes(s);
-    const matchesStatus = !statusFilter || p.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filtered = rows.filter(
+    (p) => !s || (p.title ?? '').toLowerCase().includes(s) || String(p.enquiry).includes(s),
+  );
 
   return (
     <>
@@ -77,8 +72,9 @@ export default function ProposalsPage() {
         </MiniKpiStrip>
 
         <div className="rounded-lg border border-b-subtle bg-surface shadow-card">
-          {/* Toolbar docked to the table header — search + status filter */}
-          <div className="flex flex-wrap items-center gap-2 border-b border-b-default px-3 py-2.5">
+          {/* Search bar — sticky under the 76px section header so it stays put
+              while the list scrolls. The table headers dock just below it. */}
+          <div className="sticky top-[76px] z-20 flex items-center gap-2 rounded-t-lg border-b border-b-default bg-surface px-3 py-2.5">
             <div className="relative min-w-[200px] flex-1">
               <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
               <input
@@ -88,24 +84,7 @@ export default function ProposalsPage() {
                 className="h-9 w-full rounded-md border border-b-default bg-surface pl-9 pr-3 text-[12.5px] text-text placeholder:text-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-soft"
               />
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {(['', ...PROPOSAL_STATUSES] as const).map((st) => (
-                <button
-                  key={st || 'all'}
-                  type="button"
-                  onClick={() => setStatusFilter(st)}
-                  className={cn(
-                    'rounded-full border px-3 py-1.5 text-[11.5px] font-semibold transition-colors',
-                    statusFilter === st
-                      ? 'border-primary bg-primary-soft text-primary'
-                      : 'border-b-default bg-surface text-muted hover:bg-soft',
-                  )}
-                >
-                  {st || 'All'}
-                </button>
-              ))}
-            </div>
-            <span className="ml-auto shrink-0 text-[11.5px] text-subtle">
+            <span className="shrink-0 text-[11.5px] text-subtle">
               {filtered.length} of {rows.length}
             </span>
           </div>
@@ -423,13 +402,13 @@ function Field({ label, required, children }: { label: string; required?: boolea
 }
 
 function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  // Docks directly under the 76 px section header. The KPI strip above is
-  // no longer sticky — it scrolls away, so the header no longer needs to
-  // clear a ~130 px KPI band.
+  // Docks below the 76px section header AND the ~57px sticky search bar
+  // (76 + 57 = 133), so the column headers sit right under the search row
+  // while the list scrolls under both.
   return (
     <th
       className={cn(
-        'sticky top-[76px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
+        'sticky top-[133px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
         'shadow-[inset_0_-1px_0_var(--b-default)]',
         className,
       )}
