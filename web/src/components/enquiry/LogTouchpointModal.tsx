@@ -382,7 +382,7 @@ export function LogTouchpointModal({
               <span className="font-medium normal-case tracking-normal text-subtle/80">— shows in My Queue</span>
             </div>
             <div className="w-[190px]">
-              <DateField value={followUpDate} onChange={setFollowUpDate} placeholder="Set a follow-up" />
+              <DateField value={followUpDate} onChange={setFollowUpDate} minDate={new Date()} placeholder="Set a follow-up" />
             </div>
           </div>
           <ChipSection

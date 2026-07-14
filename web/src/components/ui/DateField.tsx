@@ -29,11 +29,14 @@ export function DateField({
   onChange,
   placeholder = 'dd/mm/yyyy',
   disabled,
+  minDate,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   disabled?: boolean;
+  /** Days before this date are greyed out and not selectable. */
+  minDate?: Date;
 }) {
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -142,6 +145,7 @@ export function DateField({
           ref={popRef}
           value={parseDDMM(value)}
           coords={coords}
+          minDate={minDate}
           onPick={(d) => {
             onChange(formatDDMM(d));
             setOpen(false);
@@ -161,9 +165,11 @@ type CalendarPopoverProps = {
   value: Date | null;
   onPick: (d: Date) => void;
   coords: PopoverCoords;
+  minDate?: Date;
 };
 
-const CalendarPopover = forwardRef<HTMLDivElement, CalendarPopoverProps>(function CalendarPopover({ value, onPick, coords }, ref) {
+const CalendarPopover = forwardRef<HTMLDivElement, CalendarPopoverProps>(function CalendarPopover({ value, onPick, coords, minDate }, ref) {
+  const minDay = minDate ? new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate()) : null;
   const today = new Date();
   const [view, setView] = useState<{ y: number; m: number }>(() => {
     const base = value ?? today;
@@ -234,23 +240,27 @@ const CalendarPopover = forwardRef<HTMLDivElement, CalendarPopoverProps>(functio
 
       {/* Days grid */}
       <div className="mt-1 grid grid-cols-7 gap-[2px]">
-        {cells.map((c, i) => (
+        {cells.map((c, i) => {
+          const blocked = !!(c && minDay && c < minDay);
+          return (
           <button
             key={i}
             type="button"
-            disabled={!c}
-            onClick={() => c && onPick(c)}
+            disabled={!c || blocked}
+            onClick={() => c && !blocked && onPick(c)}
             className={cn(
               'flex h-8 items-center justify-center rounded-md text-[12.5px] font-medium',
               !c && 'invisible',
-              c && same(c, value) && 'bg-primary text-white',
-              c && !same(c, value) && same(c, today) && 'border border-primary text-primary',
-              c && !same(c, value) && !same(c, today) && 'text-text hover:bg-primary-soft',
+              blocked && 'cursor-not-allowed text-subtle opacity-30',
+              c && !blocked && same(c, value) && 'bg-primary text-white',
+              c && !blocked && !same(c, value) && same(c, today) && 'border border-primary text-primary',
+              c && !blocked && !same(c, value) && !same(c, today) && 'text-text hover:bg-primary-soft',
             )}
           >
             {c?.getDate()}
           </button>
-        ))}
+          );
+        })}
       </div>
 
       {/* Footer: today / clear */}

@@ -167,7 +167,7 @@ export function OutcomeModal({
             </div>
           </Field>
           <Field label="Next follow-up date">
-            <DateField value={nextAction} onChange={setNextAction} />
+            <DateField value={nextAction} onChange={setNextAction} minDate={new Date()} />
           </Field>
         </div>
 

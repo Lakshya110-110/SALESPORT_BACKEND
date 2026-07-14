@@ -486,7 +486,7 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Field label="Date" required>
-            <DateField value={dateStr} onChange={setDateStr} />
+            <DateField value={dateStr} onChange={setDateStr} minDate={new Date()} />
           </Field>
           <Field label="Time" required>
             <TimeField value={timeStr} onChange={setTimeStr} />
@@ -669,7 +669,7 @@ Sort String Solutions LLP`,
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Field label="New date" required>
-            <DateField value={dateStr} onChange={setDateStr} />
+            <DateField value={dateStr} onChange={setDateStr} minDate={new Date()} />
           </Field>
           <Field label="New time" required>
             <TimeField value={timeStr} onChange={setTimeStr} />

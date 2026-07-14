@@ -257,6 +257,7 @@ export function NewEnquiryModal({
             <DateField
               value={f.expectedCloseDate}
               onChange={(v) => set('expectedCloseDate', v)}
+              minDate={new Date()}
             />
           </Field>
         </div>
