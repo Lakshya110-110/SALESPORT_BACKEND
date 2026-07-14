@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileText, Plus, Upload, Download } from 'lucide-react';
+import { FileText, Plus, Upload, Download, Search } from 'lucide-react';
 import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -23,8 +23,12 @@ import type { EnquiryListItem, Proposal } from '@/lib/api/types';
  * against a chosen enquiry (Phase 8 will replace the `file_url` text field
  * with real S3 upload; today it stores metadata + a client-side data URL).
  */
+const PROPOSAL_STATUSES: Array<Proposal['status']> = ['Draft', 'Sent', 'Viewed', 'Accepted', 'Rejected'];
+
 export default function ProposalsPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'' | Proposal['status']>('');
   const q = useQuery({
     queryKey: ['proposals', 'list'],
     queryFn: () => endpoints.proposals.list({ page_size: 100 }),
@@ -36,6 +40,12 @@ export default function ProposalsPage() {
     won:       rows.filter((p) => p.status === 'Accepted').length,
     awaiting:  rows.filter((p) => p.status === 'Sent' || p.status === 'Draft').length,
   };
+  const s = search.trim().toLowerCase();
+  const filtered = rows.filter((p) => {
+    const matchesSearch = !s || (p.title ?? '').toLowerCase().includes(s) || String(p.enquiry).includes(s);
+    const matchesStatus = !statusFilter || p.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <>
@@ -47,8 +57,8 @@ export default function ProposalsPage() {
             <Button
               variant="secondary"
               leftIcon={<Download size={14} />}
-              onClick={() => exportProposalsCsv(rows)}
-              disabled={rows.length === 0}
+              onClick={() => exportProposalsCsv(filtered)}
+              disabled={filtered.length === 0}
             >
               Export
             </Button>
@@ -67,6 +77,38 @@ export default function ProposalsPage() {
         </MiniKpiStrip>
 
         <div className="rounded-lg border border-b-subtle bg-surface shadow-card">
+          {/* Toolbar docked to the table header — search + status filter */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-b-default px-3 py-2.5">
+            <div className="relative min-w-[200px] flex-1">
+              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search proposal title or enquiry #…"
+                className="h-9 w-full rounded-md border border-b-default bg-surface pl-9 pr-3 text-[12.5px] text-text placeholder:text-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-soft"
+              />
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {(['', ...PROPOSAL_STATUSES] as const).map((st) => (
+                <button
+                  key={st || 'all'}
+                  type="button"
+                  onClick={() => setStatusFilter(st)}
+                  className={cn(
+                    'rounded-full border px-3 py-1.5 text-[11.5px] font-semibold transition-colors',
+                    statusFilter === st
+                      ? 'border-primary bg-primary-soft text-primary'
+                      : 'border-b-default bg-surface text-muted hover:bg-soft',
+                  )}
+                >
+                  {st || 'All'}
+                </button>
+              ))}
+            </div>
+            <span className="ml-auto shrink-0 text-[11.5px] text-subtle">
+              {filtered.length} of {rows.length}
+            </span>
+          </div>
           <table className="w-full min-w-[720px] text-[12.5px]">
               <thead>
                 <tr className="border-b border-b-default bg-sunken">
@@ -86,17 +128,23 @@ export default function ProposalsPage() {
                       </td>
                     </tr>
                   ))
-                ) : rows.length === 0 ? (
+                ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="p-10 text-center text-[12.5px] text-subtle">
-                      No proposals yet.{' '}
-                      <button className="text-primary hover:underline" onClick={() => setUploadOpen(true)}>
-                        Upload the first one
-                      </button>.
+                      {rows.length === 0 ? (
+                        <>
+                          No proposals yet.{' '}
+                          <button className="text-primary hover:underline" onClick={() => setUploadOpen(true)}>
+                            Upload the first one
+                          </button>.
+                        </>
+                      ) : (
+                        'No proposals match your search or filter.'
+                      )}
                     </td>
                   </tr>
                 ) : (
-                  rows.map((p) => <Row key={p.id} p={p} />)
+                  filtered.map((p) => <Row key={p.id} p={p} />)
                 )}
               </tbody>
             </table>

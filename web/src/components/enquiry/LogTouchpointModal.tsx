@@ -5,10 +5,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Switch } from '@/components/ui/Switch';
+import { DateField } from '@/components/ui/DateField';
 import { endpoints } from '@/lib/api/endpoints';
 import { cn } from '@/lib/utils/cn';
 import { inrInput } from '@/lib/utils/format';
-import { todayLocalISO } from '@/lib/utils/date';
+import { todayLocalISO, ddmmToISO } from '@/lib/utils/date';
 import type { Touchpoint } from '@/lib/api/types';
 
 /**
@@ -145,6 +146,9 @@ export function LogTouchpointModal({
   const [outcomes, setOutcomes] = useState<Set<string>>(new Set([DEFAULTS.call.outcome]));
   const [nextStep, setNextStep] = useState<string>(DEFAULTS.call.nextStep);
   const [sentiment, setSentiment] = useState<string>(DEFAULTS.call.sentiment);
+  // Optional follow-up date (dd/mm/yyyy). Sent as next_action_date so this
+  // enquiry surfaces in the owner's "My Queue" on that day.
+  const [followUpDate, setFollowUpDate] = useState('');
   const qc = useQueryClient();
 
   // Reset chip picks when the channel changes.
@@ -160,6 +164,7 @@ export function LogTouchpointModal({
     setText(''); setDirection('Outbound'); setDurationSec('');
     setSubject(''); setIsPrivate(false);
     setSide('Our offer'); setAmount(''); setDiscountPct('');
+    setFollowUpDate('');
     const d = DEFAULTS.call;
     setOutcomes(new Set([d.outcome]));
     setNextStep(d.nextStep);
@@ -191,6 +196,7 @@ export function LogTouchpointModal({
         outcome: outcomeChip,
         note: text.trim(),
         next_action: nextStep,
+        next_action_date: ddmmToISO(followUpDate),
         sentiment: (sentiment as 'Hot' | 'Warm' | 'Cold' | '') || '',
         ...(channel === 'call' && {
           direction,
@@ -370,6 +376,15 @@ export function LogTouchpointModal({
             mode="single"
             onToggle={(v) => setNextStep(v === nextStep ? '' : v)}
           />
+          <div>
+            <div className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-subtle">
+              Follow-up date{' '}
+              <span className="font-medium normal-case tracking-normal text-subtle/80">— shows in My Queue</span>
+            </div>
+            <div className="w-[190px]">
+              <DateField value={followUpDate} onChange={setFollowUpDate} placeholder="Set a follow-up" />
+            </div>
+          </div>
           <ChipSection
             label="Sentiment"
             options={cfg.sentiment}

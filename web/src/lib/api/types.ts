@@ -118,6 +118,8 @@ export type EnquiryListItem = {
   derived_type: EnquiryType;
   /** ISO timestamp of the newest touchpoint; null when no touchpoints. */
   last_touch_at: string | null;
+  /** Scheduled follow-up date (yyyy-mm-dd); only set on the My Queue slice. */
+  next_followup_at: string | null;
   created_at: string;
   updated_at: string;
 };

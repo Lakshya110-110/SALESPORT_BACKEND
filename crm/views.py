@@ -1,5 +1,5 @@
 from django.conf import settings
-from django.db.models import Count, Sum, Q
+from django.db.models import Count, Sum, Q, OuterRef, Subquery
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework import viewsets, status, permissions
@@ -248,14 +248,20 @@ class EnquiryViewSet(viewsets.ModelViewSet):
             qs = qs.filter(status__in=open_statuses, updated_at__lt=cutoff)
             qs = qs.order_by("updated_at")
         if p.get("queue") == "mine":
-            # The caller's own open deals closing within a week, soonest first.
+            # The caller's own open deals with a follow-up due — overdue or
+            # within the next 7 days — soonest first. The follow-up date is the
+            # next_action_date of the most recent touchpoint that set one (a
+            # later touchpoint supersedes an earlier one), logged from the
+            # "Follow-up date" field on Log Touchpoint.
             horizon = timezone.localdate() + timezone.timedelta(days=7)
-            qs = qs.filter(
-                owner=user,
-                status__in=open_statuses,
-                expected_close_date__isnull=False,
-                expected_close_date__lte=horizon,
-            ).order_by("expected_close_date")
+            latest_followup = Touchpoint.objects.filter(
+                enquiry=OuterRef("pk"), next_action_date__isnull=False,
+            ).order_by("-created_at").values("next_action_date")[:1]
+            qs = qs.filter(owner=user, status__in=open_statuses).annotate(
+                followup_date=Subquery(latest_followup),
+            ).filter(
+                followup_date__isnull=False, followup_date__lte=horizon,
+            ).order_by("followup_date")
         return qs
 
     def perform_create(self, serializer):

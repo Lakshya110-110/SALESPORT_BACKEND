@@ -181,12 +181,20 @@ class EnquiryListSerializer(serializers.ModelSerializer):
         ).first()
         return latest
 
+    # Scheduled follow-up date — only populated on the "My Queue" slice, which
+    # annotates `followup_date` (the latest touchpoint's next_action_date).
+    # getattr keeps it a no-op (no extra query) on every other list response.
+    next_followup_at = serializers.SerializerMethodField()
+
+    def get_next_followup_at(self, obj):
+        return getattr(obj, "followup_date", None)
+
     class Meta:
         model = Enquiry
         fields = ["id", "lead_id", "company", "company_name", "contact", "contact_name",
                   "phone", "email", "source", "enquiry_type", "derived_type", "status",
                   "industry", "expected_value", "expected_close_date", "owner", "owner_name",
-                  "lost_reason", "last_touch_at", "created_at", "updated_at"]
+                  "lost_reason", "last_touch_at", "next_followup_at", "created_at", "updated_at"]
 
 
 class EnquiryDetailSerializer(serializers.ModelSerializer):

@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import { AlertTriangle, Phone, Calendar, FileText, Factory } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { fmtInr, fmtInrShort, initials, avatarColor, ddmm, timeAgo } from '@/lib/utils/format';
+import { todayLocalISO } from '@/lib/utils/date';
 import type { Dashboard, EnquiryListItem } from '@/lib/api/types';
 
 /**
@@ -155,9 +156,10 @@ function Td({ children, className }: { children: React.ReactNode; className?: st
   return <td className={cn('px-4 py-2.5 align-middle', className)}>{children}</td>;
 }
 
-/** My Queue — the signed-in user's upcoming touch queue. Selection is
- *  server-side now (`/enquiries/?queue=mine` → own open deals closing
- *  within 7 days, soonest first); this just renders the rows. */
+/** My Queue — the signed-in user's follow-ups due. Selection is server-side
+ *  (`/enquiries/?queue=mine` → own open deals whose latest touchpoint set a
+ *  next_action_date that's overdue or within 7 days, soonest first); this
+ *  just renders the rows. Log a follow-up date on Log Touchpoint to add one. */
 export function MyQueue({ enquiries }: { enquiries: EnquiryListItem[] }) {
   const soon = enquiries.slice(0, 20);
 
@@ -166,11 +168,9 @@ export function MyQueue({ enquiries }: { enquiries: EnquiryListItem[] }) {
       <div className="flex items-center justify-between border-b border-b-subtle px-5 py-3">
         <div>
           <h3 className="font-display text-[15px] font-semibold text-text">My Queue</h3>
-          {/* Deliberately not period-scoped — see StalledDeals' identical
-              note: "closing soon" is forward-looking, not tied to when the
-              deal was created, so filtering by period wouldn't clarify
-              anything, only hide deals that still need attention. */}
-          <span className="text-[10.5px] text-subtle">All time</span>
+          {/* Not period-scoped — a follow-up due date is forward-looking, not
+              tied to when the deal was created. */}
+          <span className="text-[10.5px] text-subtle">Follow-ups due</span>
         </div>
         <Link href="/enquiries" className="text-[11.5px] font-semibold text-primary hover:underline">
           View all
@@ -179,10 +179,12 @@ export function MyQueue({ enquiries }: { enquiries: EnquiryListItem[] }) {
       <div className="sp-scroll max-h-[252px] overflow-y-auto p-1">
         {soon.length === 0 ? (
           <div className="px-5 py-6 text-center text-[12.5px] text-subtle">
-            No leads closing soon on your queue.
+            No follow-ups due. Set a follow-up date when you log a touchpoint.
           </div>
         ) : (
-          soon.map((e) => (
+          soon.map((e) => {
+            const overdue = e.next_followup_at ? e.next_followup_at < todayLocalISO() : false;
+            return (
             <Link
               key={e.id}
               href={`/enquiries/${e.id}`}
@@ -199,11 +201,12 @@ export function MyQueue({ enquiries }: { enquiries: EnquiryListItem[] }) {
                   {e.status} · {e.lead_id}
                 </div>
               </div>
-              <div className="whitespace-nowrap text-[11px] font-semibold text-muted">
-                {ddmm(e.expected_close_date)}
+              <div className={cn('whitespace-nowrap text-[11px] font-semibold', overdue ? 'text-danger' : 'text-muted')}>
+                {overdue ? 'Overdue · ' : ''}{ddmm(e.next_followup_at)}
               </div>
             </Link>
-          ))
+            );
+          })
         )}
       </div>
     </div>
