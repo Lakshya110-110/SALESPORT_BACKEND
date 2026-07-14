@@ -2,7 +2,8 @@
 
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, ShieldCheck, Trash2, User as UserIcon, Download, Search } from 'lucide-react';
+import { Pencil, Plus, ShieldCheck, Trash2, User as UserIcon, Download } from 'lucide-react';
+import { SearchPill } from '@/components/ui/SearchPill';
 import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -112,15 +113,7 @@ export default function UsersPage() {
           {/* Search + filters — sticky under the 76px section header so they
               stay visible while the list scrolls; column headers dock below. */}
           <div className="sticky top-[76px] z-20 flex items-center gap-2 rounded-t-card border-b border-b-subtle bg-surface p-3">
-            <div className="relative min-w-0 flex-1">
-              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search name / phone / email…"
-                className="h-9 w-full rounded-md border border-b-subtle bg-soft pl-9 pr-3 text-[12.5px] text-text placeholder:text-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-soft"
-              />
-            </div>
+            <SearchPill value={search} onChange={setSearch} placeholder="Search name / phone / email…" />
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value as '' | User['role'])}
@@ -503,7 +496,7 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
   return (
     <th
       className={cn(
-        'sticky top-[137px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
+        'sticky top-[141px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
         'shadow-[inset_0_-1px_0_var(--b-default)]',
         className,
       )}
