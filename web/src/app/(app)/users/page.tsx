@@ -342,23 +342,15 @@ function NewUserModal({ open, onClose }: { open: boolean; onClose: () => void })
           <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputCls} />
         </Field>
         <Field label="Role" required>
-          <div className="flex flex-wrap gap-2">
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value as User['role'])}
+            className={inputCls}
+          >
             {ROLE_OPTIONS.map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setRole(r)}
-                className={cn(
-                  'rounded-md border px-3 py-2 text-[13px] font-semibold',
-                  role === r
-                    ? 'border-primary bg-primary-soft text-primary'
-                    : 'border-b-default bg-surface text-muted hover:bg-soft',
-                )}
-              >
-                {ROLE_LABELS[r]}
-              </button>
+              <option key={r} value={r}>{ROLE_LABELS[r]}</option>
             ))}
-          </div>
+          </select>
         </Field>
         {submit.error && (
           <div className="rounded-md bg-danger-soft p-2 text-[12px] text-danger">
@@ -374,6 +366,7 @@ function EditUserModal({ user, open, onClose }: { user: User; open: boolean; onC
   const [name, setName] = useState(user.name);
   const [phone, setPhone] = useState(user.phone);
   const [email, setEmail] = useState(user.email);
+  const [role, setRole] = useState<User['role']>(user.role);
   const qc = useQueryClient();
 
   const submit = useMutation({
@@ -382,6 +375,7 @@ function EditUserModal({ user, open, onClose }: { user: User; open: boolean; onC
         name: name.trim(),
         phone: phone.trim(),
         email: email.trim(),
+        role,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['users'] });
@@ -422,6 +416,17 @@ function EditUserModal({ user, open, onClose }: { user: User; open: boolean; onC
         </Field>
         <Field label="Email">
           <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputCls} />
+        </Field>
+        <Field label="Role" required>
+          <select
+            value={role}
+            onChange={(e) => setRole(e.target.value as User['role'])}
+            className={inputCls}
+          >
+            {ROLE_OPTIONS.map((r) => (
+              <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+            ))}
+          </select>
         </Field>
         {submit.error && (
           <div className="rounded-md bg-danger-soft p-2 text-[12px] text-danger">
