@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, ShieldCheck, Trash2, User as UserIcon, Download } from 'lucide-react';
+import { Pencil, Plus, ShieldCheck, Trash2, User as UserIcon, Download, Search } from 'lucide-react';
 import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -63,6 +63,21 @@ export default function UsersPage() {
 
   const rows = q.data?.results ?? [];
 
+  const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'' | User['role']>('');
+  const [activeFilter, setActiveFilter] = useState<'' | 'active' | 'inactive'>('');
+  const term = search.trim().toLowerCase();
+  const filtered = rows.filter((u) => {
+    const matchesSearch =
+      !term ||
+      u.name.toLowerCase().includes(term) ||
+      u.phone.includes(term) ||
+      (u.email ?? '').toLowerCase().includes(term);
+    const matchesRole = !roleFilter || u.role === roleFilter;
+    const matchesActive = !activeFilter || (activeFilter === 'active' ? u.is_active : !u.is_active);
+    return matchesSearch && matchesRole && matchesActive;
+  });
+
   return (
     <>
       <SectionHeader
@@ -73,8 +88,8 @@ export default function UsersPage() {
             <Button
               variant="secondary"
               leftIcon={<Download size={14} />}
-              onClick={() => downloadCsv('users.csv', USER_CSV_COLS, rows)}
-              disabled={rows.length === 0}
+              onClick={() => downloadCsv('users.csv', USER_CSV_COLS, filtered)}
+              disabled={filtered.length === 0}
             >
               Export
             </Button>
@@ -94,6 +109,39 @@ export default function UsersPage() {
           </div>
         )}
         <div className="rounded-card border border-b-subtle bg-surface shadow-sm">
+          {/* Search + filters — sticky under the 76px section header so they
+              stay visible while the list scrolls; column headers dock below. */}
+          <div className="sticky top-[76px] z-20 flex items-center gap-2 rounded-t-card border-b border-b-subtle bg-surface p-3">
+            <div className="relative min-w-0 flex-1">
+              <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search name / phone / email…"
+                className="h-9 w-full rounded-md border border-b-subtle bg-soft pl-9 pr-3 text-[12.5px] text-text placeholder:text-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-soft"
+              />
+            </div>
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value as '' | User['role'])}
+              className="h-9 shrink-0 rounded-md border border-b-subtle bg-soft px-2 text-[12.5px] font-medium text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-soft"
+            >
+              <option value="">All roles</option>
+              {ROLE_OPTIONS.map((r) => (
+                <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+              ))}
+            </select>
+            <select
+              value={activeFilter}
+              onChange={(e) => setActiveFilter(e.target.value as '' | 'active' | 'inactive')}
+              className="h-9 shrink-0 rounded-md border border-b-subtle bg-soft px-2 text-[12.5px] font-medium text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-soft"
+            >
+              <option value="">All status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <span className="shrink-0 text-[11.5px] text-subtle">{filtered.length} of {rows.length}</span>
+          </div>
           <table className="w-full text-[12.5px]">
             <thead>
               <tr className="border-b border-b-default bg-sunken">
@@ -114,14 +162,14 @@ export default function UsersPage() {
                     </td>
                   </tr>
                 ))
-              ) : rows.length === 0 ? (
+              ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-10 text-center text-[12.5px] text-subtle">
-                    No users yet.
+                    {rows.length === 0 ? 'No users yet.' : 'No users match your search or filters.'}
                   </td>
                 </tr>
               ) : (
-                rows.map((u) => (
+                filtered.map((u) => (
                   <tr key={u.id} className="border-t border-b-subtle hover:bg-soft">
                     <Td>
                       <div className="flex items-center gap-2">
@@ -450,7 +498,7 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
   return (
     <th
       className={cn(
-        'sticky top-[76px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
+        'sticky top-[137px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
         'shadow-[inset_0_-1px_0_var(--b-default)]',
         className,
       )}
