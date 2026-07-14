@@ -56,8 +56,7 @@ import type { EnquiryListItem } from '@/lib/api/types';
 // stay as the safety net for the narrow window before a category has ever
 // been populated.
 const STATUSES_FALLBACK = [
-  'Enquiry', 'Qualified', 'Meeting Scheduled', 'Meeting Done', 'Proposal Sent',
-  'Negotiation', 'Won', 'Lost',
+  'New', 'In Progress', 'Won', 'Lost', 'Spam',
 ] as const;
 const TYPES_FALLBACK = ['Hot', 'Warm', 'Cold'] as const;
 const SOURCES_FALLBACK = ['Referral', 'Website', 'Cold call', 'Exhibition', 'Partner'] as const;
@@ -716,14 +715,11 @@ function PriPill({ t }: { t: string }) {
 
 function StatusBadge({ s }: { s: string }) {
   const tone: Record<string, string> = {
-    Enquiry: 'bg-info-soft text-info',
-    Qualified: 'bg-primary-soft text-primary',
-    'Meeting Scheduled': 'bg-accent-soft text-accent',
-    'Meeting Done': 'bg-primary-soft text-primary',
-    'Proposal Sent': 'bg-teal-soft text-teal',
-    Negotiation: 'bg-warning-soft text-warning',
+    New: 'bg-info-soft text-info',
+    'In Progress': 'bg-warning-soft text-warning',
     Won: 'bg-success-soft text-success',
     Lost: 'bg-danger-soft text-danger',
+    Spam: 'bg-sunken text-muted',
   };
   return (
     <span

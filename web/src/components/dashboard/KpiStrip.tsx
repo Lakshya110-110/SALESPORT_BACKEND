@@ -40,7 +40,7 @@ export function KpiStrip({ data }: { data: Dashboard }) {
   // overdue follow-ups explicitly
   const overdue = data.unassigned ?? 0;
 
-  const negotiationCount = data.by_stage?.find((r) => r.status === 'Negotiation')?.count ?? 0;
+  const inProgressCount = data.by_stage?.find((r) => r.status === 'In Progress')?.count ?? 0;
 
   const cards: KpiCard[] = [
     {
@@ -53,7 +53,7 @@ export function KpiStrip({ data }: { data: Dashboard }) {
     {
       label: 'Open Enquiries',
       value: String(data.open_enquiries || 0),
-      sub: `${negotiationCount} in negotiation`,
+      sub: `${inProgressCount} in progress`,
       subTone: 'neutral',
       icon: Users,
     },

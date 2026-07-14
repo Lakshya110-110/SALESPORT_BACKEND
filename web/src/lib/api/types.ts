@@ -88,14 +88,11 @@ export type Contact = {
 };
 
 export type EnquiryStatus =
-  | 'Enquiry'
-  | 'Qualified'
-  | 'Meeting Scheduled'
-  | 'Meeting Done'
-  | 'Proposal Sent'
-  | 'Negotiation'
+  | 'New'
+  | 'In Progress'
   | 'Won'
-  | 'Lost';
+  | 'Lost'
+  | 'Spam';
 
 export type EnquiryType = 'Hot' | 'Warm' | 'Cold';
 

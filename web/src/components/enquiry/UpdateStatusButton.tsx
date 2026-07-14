@@ -20,25 +20,19 @@ const LOST_REASONS: LostReason[] = [
 ];
 
 const ALL_STATUSES: EnquiryStatus[] = [
-  'Enquiry',
-  'Qualified',
-  'Meeting Scheduled',
-  'Meeting Done',
-  'Proposal Sent',
-  'Negotiation',
+  'New',
+  'In Progress',
   'Won',
   'Lost',
+  'Spam',
 ];
 
 const TONE: Record<string, string> = {
-  Enquiry: 'bg-info',
-  Qualified: 'bg-primary',
-  'Meeting Scheduled': 'bg-accent',
-  'Meeting Done': 'bg-primary',
-  'Proposal Sent': 'bg-info',
-  Negotiation: 'bg-warning',
+  New: 'bg-info',
+  'In Progress': 'bg-warning',
   Won: 'bg-success',
   Lost: 'bg-danger',
+  Spam: 'bg-muted',
 };
 
 /**

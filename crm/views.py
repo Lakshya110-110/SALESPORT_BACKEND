@@ -241,10 +241,7 @@ class EnquiryViewSet(viewsets.ModelViewSet):
                 )
         # Dashboard side-panel slices — server-computed so they cover the
         # whole dataset instead of whatever page the client happened to load.
-        open_statuses = [
-            "Enquiry", "Qualified", "Meeting Scheduled",
-            "Meeting Done", "Proposal Sent", "Negotiation",
-        ]
+        open_statuses = ["New", "In Progress"]
         if p.get("stalled"):
             # Open deals untouched for STALE_DAYS+, stalest first.
             cutoff = timezone.now() - timezone.timedelta(days=Enquiry.STALE_DAYS)
@@ -630,7 +627,7 @@ def dashboard(request):
     created_qs = qs.filter(created_at__gte=start) if start else qs
 
     by_stage = list(created_qs.values("status").annotate(count=Count("id")).order_by())
-    open_statuses = ["Enquiry", "Qualified", "Meeting Scheduled", "Proposal Sent", "Negotiation"]
+    open_statuses = ["New", "In Progress"]
     won = created_qs.filter(status="Won")
     pipeline_value = created_qs.filter(status__in=open_statuses).aggregate(v=Sum("expected_value"))["v"] or 0
 

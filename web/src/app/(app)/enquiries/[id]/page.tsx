@@ -110,14 +110,11 @@ function DetailBody({ e }: { e: EnquiryDetail }) {
     Cold: 'bg-sunken text-muted',
   };
   const statusTone: Record<string, string> = {
-    Enquiry: 'bg-info-soft text-info',
-    Qualified: 'bg-primary-soft text-primary',
-    'Meeting Scheduled': 'bg-accent-soft text-accent',
-    'Meeting Done': 'bg-primary-soft text-primary',
-    'Proposal Sent': 'bg-info-soft text-info',
-    Negotiation: 'bg-warning-soft text-warning',
+    New: 'bg-info-soft text-info',
+    'In Progress': 'bg-warning-soft text-warning',
     Won: 'bg-success-soft text-success',
     Lost: 'bg-danger-soft text-danger',
+    Spam: 'bg-sunken text-muted',
   };
 
   return (

@@ -121,7 +121,7 @@ export function NewEnquiryModal({
         phone: f.phone.replace(/\D/g, '').slice(-10),
         email: f.email.trim(),
         source: f.source,
-        status: 'Enquiry',
+        status: 'New',
         industry: f.industry,
         expected_value: f.expectedValue ? Number(f.expectedValue.replace(/,/g, '')) : 0,
         expected_close_date: ddmmToISO(f.expectedCloseDate),

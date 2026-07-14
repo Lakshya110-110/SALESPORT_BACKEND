@@ -23,7 +23,7 @@ MASTER = {
         "Bakery", "Frozen foods", "Confectionery", "Ready-to-eat", "Nutraceuticals",
     ],
     "source": ["Referral", "Website", "Cold call", "Exhibition", "Partner"],
-    "status": ["Enquiry", "Qualified", "Meeting Scheduled", "Meeting Done", "Proposal Sent", "Negotiation", "Won", "Lost"],
+    "status": ["New", "In Progress", "Won", "Lost", "Spam"],
     "enquiry_type": ["Hot", "Warm", "Cold"],
     "mode": ["In-person", "Online", "Phone"],
 }
@@ -70,22 +70,17 @@ TYPES = ["Hot", "Warm", "Cold"]
 # Mirrors EnquiryViewSet.get_queryset's open_statuses in crm/views.py — used
 # to pick which seeded enquiries are eligible to show up as "stalled" or in
 # someone's "My Queue".
-OPEN_STATUSES = [
-    "Enquiry", "Qualified", "Meeting Scheduled",
-    "Meeting Done", "Proposal Sent", "Negotiation",
-]
+OPEN_STATUSES = ["New", "In Progress"]
 
-# Status distributions per age band (weeks ago from today).
-# Recent enquiries are early-funnel; older ones are closed. "Meeting Done"
-# sits between Meeting Scheduled and Proposal Sent — the meeting happened but
-# no proposal has gone out yet — so it's most likely in the 2–5 week band and
-# has a small tail in 5–9 (deals that stalled after the meeting).
+# Status distributions per age band (weeks ago from today). Recent enquiries
+# are mostly New/early; older ones have progressed to In Progress and then
+# closed out as Won/Lost (with a little Spam in the tail).
 STATUS_BY_AGE = [
     # (min_weeks, max_weeks, [(status, weight), ...])
-    (0, 2,  [("Enquiry", 3), ("Qualified", 3), ("Meeting Scheduled", 2), ("Meeting Done", 1), ("Proposal Sent", 1)]),
-    (2, 5,  [("Meeting Scheduled", 2), ("Meeting Done", 2), ("Proposal Sent", 3), ("Negotiation", 3), ("Qualified", 1)]),
-    (5, 9,  [("Meeting Done", 1), ("Proposal Sent", 2), ("Negotiation", 3), ("Won", 2), ("Lost", 1)]),
-    (9, 13, [("Won", 3), ("Lost", 2), ("Negotiation", 1)]),
+    (0, 2,  [("New", 4), ("In Progress", 3)]),
+    (2, 5,  [("New", 1), ("In Progress", 5)]),
+    (5, 9,  [("In Progress", 3), ("Won", 2), ("Lost", 1)]),
+    (9, 13, [("Won", 3), ("Lost", 2), ("Spam", 1)]),
 ]
 
 TOUCHPOINT_TEMPLATES = [
@@ -337,7 +332,7 @@ class Command(BaseCommand):
                     _stamp(Touchpoint, tp.pk, created_at_m + timedelta(hours=random.randint(2, 24)))
 
         self.stdout.write("Seeding proposals + negotiation rounds...")
-        for enq in [e for e in made if e.status in ("Proposal Sent", "Negotiation", "Won")]:
+        for enq in [e for e in made if e.status in ("In Progress", "Won")]:
             # Clamp to `now` — for a recently-created enquiry, created_at +
             # up to 10 days can land in the future.
             p = Proposal.objects.create(
@@ -347,7 +342,7 @@ class Command(BaseCommand):
             )
             _stamp(Proposal, p.pk, min(enq.created_at + timedelta(days=random.randint(2, 10)), now))
 
-        for enq in [e for e in made if e.status in ("Negotiation", "Won")]:
+        for enq in [e for e in made if e.status in ("In Progress", "Won")]:
             rounds = random.randint(1, 3)
             baseline = float(enq.expected_value)
             for r in range(rounds):

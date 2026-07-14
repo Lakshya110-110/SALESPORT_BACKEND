@@ -161,14 +161,11 @@ class Contact(models.Model):
 # ---------------------------------------------------------------------------
 class Enquiry(models.Model):
     STATUS_CHOICES = [
-        ("Enquiry", "Enquiry"),
-        ("Qualified", "Qualified"),
-        ("Meeting Scheduled", "Meeting Scheduled"),
-        ("Meeting Done", "Meeting Done"),
-        ("Proposal Sent", "Proposal Sent"),
-        ("Negotiation", "Negotiation"),
+        ("New", "New"),
+        ("In Progress", "In Progress"),
         ("Won", "Won"),
         ("Lost", "Lost"),
+        ("Spam", "Spam"),
     ]
     TYPE_CHOICES = [("Hot", "Hot"), ("Warm", "Warm"), ("Cold", "Cold")]
 
@@ -215,7 +212,7 @@ class Enquiry(models.Model):
     gstin = models.CharField(max_length=20, blank=True)
     source = models.CharField(max_length=40, default="Website")
     enquiry_type = models.CharField(max_length=10, choices=TYPE_CHOICES, default="Warm")
-    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="Enquiry")
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES, default="New")
     industry = models.CharField(max_length=60, default="Dairy")
     solution_type = models.CharField(max_length=60, choices=SOLUTION_TYPE_CHOICES, blank=True)
     solution_type_other = models.CharField(max_length=200, blank=True)

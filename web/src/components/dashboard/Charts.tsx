@@ -21,11 +21,8 @@ import { fmtInrShort } from '@/lib/utils/format';
 const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const OPEN_STATUSES = new Set<string>([
-  'Enquiry',
-  'Qualified',
-  'Meeting Scheduled',
-  'Proposal Sent',
-  'Negotiation',
+  'New',
+  'In Progress',
 ]);
 
 const CHART_H = 148;

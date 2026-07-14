@@ -4,25 +4,19 @@ import { cn } from '@/lib/utils/cn';
 import type { Dashboard } from '@/lib/api/types';
 
 const STAGE_ORDER = [
-  'Enquiry',
-  'Qualified',
-  'Meeting Scheduled',
-  'Meeting Done',
-  'Proposal Sent',
-  'Negotiation',
+  'New',
+  'In Progress',
   'Won',
   'Lost',
+  'Spam',
 ];
 
 const STAGE_LABELS: Record<string, string> = {
-  Enquiry: 'Enquiry',
-  Qualified: 'Qualified',
-  'Meeting Scheduled': 'Meeting',
-  'Meeting Done': 'Meeting Done',
-  'Proposal Sent': 'Proposal',
-  Negotiation: 'Negotiation',
+  New: 'New',
+  'In Progress': 'In Progress',
   Won: 'Won',
   Lost: 'Lost',
+  Spam: 'Spam',
 };
 
 // Hard-coded hex per stage so the funnel reads the same on light and the
@@ -30,14 +24,11 @@ const STAGE_LABELS: Record<string, string> = {
 // the "Proposal Sent" bar was disappearing against the black canvas —
 // pinning the palette here keeps every stage distinct regardless of theme.
 const STAGE_COLOR: Record<string, string> = {
-  Enquiry: '#6E8BD6',            // lightest blue — entry stage
-  Qualified: '#5377CF',
-  'Meeting Scheduled': '#3F63C6',
-  'Meeting Done': '#324DA8',      // between Scheduled and Proposal
-  'Proposal Sent': '#2A41A0',
-  Negotiation: '#C77A12',         // warning amber — mirrors status pill tone
+  New: '#6E8BD6',                 // entry blue
+  'In Progress': '#C77A12',       // warning amber — mirrors status pill tone
   Won: '#1F9D5B',                 // success green
   Lost: '#D14343',                // danger red
+  Spam: '#8A8F98',                // muted grey
 };
 
 /**

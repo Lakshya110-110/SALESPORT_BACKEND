@@ -12,7 +12,7 @@ import type { Dashboard, EnquiryListItem } from '@/lib/api/types';
  * threshold. Computed client-side from the enquiries list until the backend
  * exposes a dedicated endpoint. Same visual as the mockup's `.card` + table.
  */
-const OPEN = new Set(['Enquiry', 'Qualified', 'Meeting Scheduled', 'Meeting Done', 'Proposal Sent', 'Negotiation']);
+const OPEN = new Set(['New', 'In Progress']);
 
 /** Days since an ISO timestamp; returns null when the timestamp is
  *  missing so the caller can render a distinct "never" pill. */
@@ -274,10 +274,9 @@ export function RecentActivity({ enquiries }: { enquiries: EnquiryListItem[] }) 
 function iconFor(status: string): [React.ReactNode, string] {
   if (status === 'Won') return [<CheckIcon key="w" />, 'bg-success-soft text-success'];
   if (status === 'Lost') return [<AlertTriangle key="l" size={16} />, 'bg-danger-soft text-danger'];
-  if (status === 'Proposal Sent') return [<FileText key="p" size={16} />, 'bg-info-soft text-info'];
-  if (status === 'Meeting Scheduled' || status === 'Meeting Done')
-    return [<Calendar key="m" size={16} />, 'bg-primary-soft text-primary'];
-  return [<Phone key="c" size={16} />, 'bg-primary-soft text-primary'];
+  if (status === 'Spam') return [<AlertTriangle key="s" size={16} />, 'bg-sunken text-muted'];
+  if (status === 'In Progress') return [<FileText key="p" size={16} />, 'bg-warning-soft text-warning'];
+  return [<Phone key="c" size={16} />, 'bg-info-soft text-info'];
 }
 function CheckIcon() {
   return (
