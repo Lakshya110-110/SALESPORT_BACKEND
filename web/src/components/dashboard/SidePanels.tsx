@@ -159,7 +159,7 @@ function Td({ children, className }: { children: React.ReactNode; className?: st
  *  server-side now (`/enquiries/?queue=mine` → own open deals closing
  *  within 7 days, soonest first); this just renders the rows. */
 export function MyQueue({ enquiries }: { enquiries: EnquiryListItem[] }) {
-  const soon = enquiries.slice(0, 4);
+  const soon = enquiries.slice(0, 20);
 
   return (
     <div className="rounded-card border border-b-subtle bg-surface shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-[1px] hover:border-primary/40 hover:shadow-pop">
@@ -176,7 +176,7 @@ export function MyQueue({ enquiries }: { enquiries: EnquiryListItem[] }) {
           View all
         </Link>
       </div>
-      <div className="p-1">
+      <div className="sp-scroll max-h-[252px] overflow-y-auto p-1">
         {soon.length === 0 ? (
           <div className="px-5 py-6 text-center text-[12.5px] text-subtle">
             No leads closing soon on your queue.
@@ -217,7 +217,7 @@ export function RecentActivity({ enquiries }: { enquiries: EnquiryListItem[] }) 
     () => enquiries
       .slice()
       .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
-      .slice(0, 4),
+      .slice(0, 20),
     [enquiries],
   );
 
@@ -229,7 +229,7 @@ export function RecentActivity({ enquiries }: { enquiries: EnquiryListItem[] }) 
           View all
         </Link>
       </div>
-      <div className="p-1">
+      <div className="sp-scroll max-h-[252px] overflow-y-auto p-1">
         {rows.length === 0 ? (
           <div className="px-5 py-6 text-center text-[12.5px] text-subtle">
             No recent activity yet.
@@ -302,7 +302,7 @@ export function TeamPerformance({ data }: { data: Dashboard }) {
           No enquiries logged by the team yet.
         </div>
       ) : (
-      <div className="space-y-3 px-5 py-4">
+      <div className="sp-scroll max-h-[164px] space-y-3 overflow-y-auto px-5 py-4">
         {rows.map((r) => {
           const name = r.owner__name ?? 'Unassigned';
           const pct = max > 0 ? Math.round((r.count / max) * 100) : 0;
@@ -395,7 +395,7 @@ export function WhyWeLose({ data }: { data?: Dashboard }) {
           same reasoning as Top Industries below it — otherwise this card's
           height swings with however many loss reasons the team has actually
           recorded, throwing off the vertical balance of the whole column. */}
-      <div className="sp-scroll mt-4 max-h-[190px] space-y-2.5 overflow-y-auto pr-1">
+      <div className="sp-scroll mt-4 max-h-[118px] space-y-2.5 overflow-y-auto pr-1">
         {rows.map((r) => {
           const pct = Math.round((r.count / max) * 100);
           return (

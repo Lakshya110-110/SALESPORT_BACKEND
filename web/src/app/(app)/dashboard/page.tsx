@@ -92,7 +92,7 @@ export default function DashboardPage() {
   });
   const queueQ = useQuery({
     queryKey: ['enquiries', 'queue-mine'],
-    queryFn: () => endpoints.enquiries.list({ queue: 'mine', page_size: 4 }),
+    queryFn: () => endpoints.enquiries.list({ queue: 'mine', page_size: 20 }),
   });
 
   const loading = dashQ.isLoading || enqQ.isLoading;
