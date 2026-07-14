@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Pencil, Plus, ShieldCheck, Trash2, User as UserIcon } from 'lucide-react';
+import { Pencil, Plus, ShieldCheck, Trash2, User as UserIcon, Download } from 'lucide-react';
 import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -11,6 +11,7 @@ import { endpoints } from '@/lib/api/endpoints';
 import { session } from '@/lib/auth/session';
 import { avatarColor, initials, fmtPhone } from '@/lib/utils/format';
 import { cn } from '@/lib/utils/cn';
+import { downloadCsv } from '@/lib/utils/csv';
 import type { Paginated, User } from '@/lib/api/types';
 
 /**
@@ -68,11 +69,21 @@ export default function UsersPage() {
         title="Users"
         subtitle={`${q.data?.count ?? 0} on the team`}
         actions={
-          isAdmin ? (
-            <Button leftIcon={<Plus size={15} />} onClick={() => setNewOpen(true)}>
-              Add user
+          <>
+            <Button
+              variant="secondary"
+              leftIcon={<Download size={14} />}
+              onClick={() => downloadCsv('users.csv', USER_CSV_COLS, rows)}
+              disabled={rows.length === 0}
+            >
+              Export
             </Button>
-          ) : undefined
+            {isAdmin && (
+              <Button leftIcon={<Plus size={15} />} onClick={() => setNewOpen(true)}>
+                Add user
+              </Button>
+            )}
+          </>
         }
       />
 
@@ -199,6 +210,14 @@ const ROLE_LABELS: Record<User['role'], string> = {
   founder: 'Founder',
   admin: 'Admin',
 };
+
+const USER_CSV_COLS: Array<[string, (u: User) => string]> = [
+  ['Name', (u) => u.name],
+  ['Phone', (u) => u.phone],
+  ['Email', (u) => u.email ?? ''],
+  ['Role', (u) => ROLE_LABELS[u.role] ?? u.role],
+  ['Active', (u) => (u.is_active ? 'Yes' : 'No')],
+];
 
 function RoleBadge({ role }: { role: User['role'] }) {
   return (
