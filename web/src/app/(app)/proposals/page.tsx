@@ -13,7 +13,17 @@ import { endpoints } from '@/lib/api/endpoints';
 import { fmtInr, ddmm } from '@/lib/utils/format';
 import { validatePdfFile } from '@/lib/utils/file';
 import { cn } from '@/lib/utils/cn';
+import { SortableTh } from '@/components/ui/SortableTh';
+import { useTableSort } from '@/lib/hooks/useTableSort';
 import type { EnquiryListItem, Proposal } from '@/lib/api/types';
+
+const PROPOSAL_SORT = {
+  title: (p: Proposal) => p.title?.toLowerCase(),
+  enquiry: (p: Proposal) => p.enquiry,
+  status: (p: Proposal) => p.status,
+  sent: (p: Proposal) => p.sent_at ?? p.created_at,
+  amount: (p: Proposal) => Number(p.amount) || 0,
+};
 
 /**
  * Proposals — /proposals.
@@ -41,6 +51,7 @@ export default function ProposalsPage() {
   const filtered = rows.filter(
     (p) => !s || (p.title ?? '').toLowerCase().includes(s) || String(p.enquiry).includes(s),
   );
+  const { sorted, activeKey, dir, onSort } = useTableSort(filtered, PROPOSAL_SORT);
 
   return (
     <>
@@ -91,11 +102,11 @@ export default function ProposalsPage() {
           <table className="w-full min-w-[720px] text-[12.5px]">
               <thead>
                 <tr className="border-b border-b-default bg-sunken">
-                  <Th>Proposal</Th>
-                  <Th>Enquiry</Th>
-                  <Th>Status</Th>
-                  <Th>Sent</Th>
-                  <Th className="text-right">Amount</Th>
+                  <SortableTh label="Proposal" sortKey="title" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh label="Enquiry" sortKey="enquiry" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh label="Status" sortKey="status" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh label="Sent" sortKey="sent" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh label="Amount" sortKey="amount" align="right" activeKey={activeKey} dir={dir} onSort={onSort} />
                 </tr>
               </thead>
               <tbody>
@@ -123,7 +134,7 @@ export default function ProposalsPage() {
                     </td>
                   </tr>
                 ) : (
-                  filtered.map((p) => <Row key={p.id} p={p} />)
+                  sorted.map((p) => <Row key={p.id} p={p} />)
                 )}
               </tbody>
             </table>

@@ -4,6 +4,8 @@ import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, ShieldCheck, Trash2, User as UserIcon, Download } from 'lucide-react';
 import { SearchPill } from '@/components/ui/SearchPill';
+import { SortableTh } from '@/components/ui/SortableTh';
+import { useTableSort } from '@/lib/hooks/useTableSort';
 import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -79,6 +81,8 @@ export default function UsersPage() {
     return matchesSearch && matchesRole && matchesActive;
   });
 
+  const { sorted, activeKey, dir, onSort } = useTableSort(filtered, USER_SORT);
+
   return (
     <>
       <SectionHeader
@@ -138,12 +142,12 @@ export default function UsersPage() {
           <table className="w-full text-[12.5px]">
             <thead>
               <tr className="border-b border-b-default bg-sunken">
-                <Th>Name</Th>
-                <Th>Phone</Th>
-                <Th>Email</Th>
-                <Th>Role</Th>
+                <SortableTh label="Name" sortKey="name" activeKey={activeKey} dir={dir} onSort={onSort} />
+                <SortableTh label="Phone" sortKey="phone" activeKey={activeKey} dir={dir} onSort={onSort} />
+                <SortableTh label="Email" sortKey="email" activeKey={activeKey} dir={dir} onSort={onSort} />
+                <SortableTh label="Role" sortKey="role" activeKey={activeKey} dir={dir} onSort={onSort} />
                 <Th>Actions</Th>
-                <Th className="text-right">Active</Th>
+                <SortableTh label="Active" sortKey="active" align="right" activeKey={activeKey} dir={dir} onSort={onSort} />
               </tr>
             </thead>
             <tbody>
@@ -162,7 +166,7 @@ export default function UsersPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((u) => (
+                sorted.map((u) => (
                   <tr key={u.id} className="border-t border-b-subtle hover:bg-soft">
                     <Td>
                       <div className="flex items-center gap-2">
@@ -260,6 +264,14 @@ const USER_CSV_COLS: Array<[string, (u: User) => string]> = [
   ['Role', (u) => ROLE_LABELS[u.role] ?? u.role],
   ['Active', (u) => (u.is_active ? 'Yes' : 'No')],
 ];
+
+const USER_SORT = {
+  name: (u: User) => u.name?.toLowerCase(),
+  phone: (u: User) => u.phone,
+  email: (u: User) => u.email?.toLowerCase(),
+  role: (u: User) => ROLE_LABELS[u.role] ?? u.role,
+  active: (u: User) => (u.is_active ? 1 : 0),
+};
 
 function RoleBadge({ role }: { role: User['role'] }) {
   return (

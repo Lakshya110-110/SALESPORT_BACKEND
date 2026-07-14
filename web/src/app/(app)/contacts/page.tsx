@@ -12,7 +12,18 @@ import { cn } from '@/lib/utils/cn';
 import { fmtPhone } from '@/lib/utils/format';
 import { downloadCsv } from '@/lib/utils/csv';
 import { SearchPill } from '@/components/ui/SearchPill';
+import { SortableTh } from '@/components/ui/SortableTh';
+import { useTableSort } from '@/lib/hooks/useTableSort';
 import type { Company, Contact } from '@/lib/api/types';
+
+const CONTACT_SORT = {
+  name: (c: Contact) => c.name?.toLowerCase(),
+  company: (c: Contact) => c.company_name?.toLowerCase(),
+  designation: (c: Contact) => c.designation?.toLowerCase(),
+  phone: (c: Contact) => c.phone,
+  email: (c: Contact) => c.email?.toLowerCase(),
+  primary: (c: Contact) => (c.is_primary ? 1 : 0),
+};
 
 const CONTACT_CSV_COLS: Array<[string, (c: Contact) => string]> = [
   ['Name', (c) => c.name],
@@ -45,6 +56,8 @@ export default function ContactsPage() {
   // Controlled search text, synced from the URL param; commits on Enter.
   const [searchInput, setSearchInput] = useState(search);
   useEffect(() => setSearchInput(search), [search]);
+
+  const { sorted, activeKey, dir, onSort } = useTableSort(rows, CONTACT_SORT);
 
   return (
     <>
@@ -82,12 +95,12 @@ export default function ContactsPage() {
             <table className="w-full min-w-[720px] text-[12.5px]">
               <thead>
                 <tr className="border-b border-b-default bg-sunken">
-                  <Th>Name</Th>
-                  <Th>Company</Th>
-                  <Th>Designation</Th>
-                  <Th>Phone</Th>
-                  <Th>Email</Th>
-                  <Th>Primary</Th>
+                  <SortableTh label="Name" sortKey="name" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh label="Company" sortKey="company" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh label="Designation" sortKey="designation" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh label="Phone" sortKey="phone" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh label="Email" sortKey="email" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh label="Primary" sortKey="primary" activeKey={activeKey} dir={dir} onSort={onSort} />
                 </tr>
               </thead>
               <tbody>
@@ -106,7 +119,7 @@ export default function ContactsPage() {
                     </td>
                   </tr>
                 ) : (
-                  rows.map((c) => <Row key={c.id} c={c} />)
+                  sorted.map((c) => <Row key={c.id} c={c} />)
                 )}
               </tbody>
             </table>

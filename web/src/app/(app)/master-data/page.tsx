@@ -10,7 +10,15 @@ import { endpoints } from '@/lib/api/endpoints';
 import { session } from '@/lib/auth/session';
 import { cn } from '@/lib/utils/cn';
 import { downloadCsv } from '@/lib/utils/csv';
+import { SortableTh } from '@/components/ui/SortableTh';
+import { useTableSort } from '@/lib/hooks/useTableSort';
 import type { MasterDataItem } from '@/lib/api/types';
+
+const MD_SORT = {
+  value: (m: MasterDataItem) => m.value?.toLowerCase(),
+  label: (m: MasterDataItem) => m.label?.toLowerCase(),
+  order: (m: MasterDataItem) => m.order ?? 0,
+};
 
 const MD_CSV_COLS: Array<[string, (m: MasterDataItem) => string]> = [
   ['Category', (m) => m.category],
@@ -130,15 +138,16 @@ function CategoryTable({
   });
 
   const rows = q.data?.results ?? [];
+  const { sorted, activeKey, dir, onSort } = useTableSort(rows, MD_SORT);
 
   return (
     <div className="sp-scroll overflow-auto" style={{ maxHeight: 'calc(100dvh - 175px)' }}>
     <table className="w-full text-[12.5px]">
       <thead>
         <tr className="border-b border-b-default bg-sunken">
-          <Th>Value</Th>
-          <Th>Label</Th>
-          <Th className="text-right">Order</Th>
+          <SortableTh label="Value" sortKey="value" activeKey={activeKey} dir={dir} onSort={onSort} />
+          <SortableTh label="Label" sortKey="label" activeKey={activeKey} dir={dir} onSort={onSort} />
+          <SortableTh label="Order" sortKey="order" align="right" activeKey={activeKey} dir={dir} onSort={onSort} />
           {canEdit && <Th />}
         </tr>
       </thead>
@@ -158,7 +167,7 @@ function CategoryTable({
             </td>
           </tr>
         ) : (
-          rows.map((m) => (
+          sorted.map((m) => (
             <tr key={m.id} className="border-t border-b-subtle hover:bg-soft">
               <Td><span className="font-mono">{m.value}</span></Td>
               <Td>{m.label}</Td>

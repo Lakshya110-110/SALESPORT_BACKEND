@@ -13,8 +13,18 @@ import { cn } from '@/lib/utils/cn';
 import { fmtPhone } from '@/lib/utils/format';
 import { downloadCsv } from '@/lib/utils/csv';
 import { SearchPill } from '@/components/ui/SearchPill';
+import { SortableTh } from '@/components/ui/SortableTh';
+import { useTableSort } from '@/lib/hooks/useTableSort';
 import { useMasterDataValues } from '@/lib/hooks/useMasterData';
 import type { Company } from '@/lib/api/types';
+
+const COMPANY_SORT = {
+  name: (c: Company) => c.name?.toLowerCase(),
+  industry: (c: Company) => c.industry?.toLowerCase(),
+  city: (c: Company) => c.city?.toLowerCase(),
+  gstin: (c: Company) => c.gstin?.toLowerCase(),
+  contacts: (c: Company) => c.contact_count ?? 0,
+};
 
 const COMPANY_CSV_COLS: Array<[string, (c: Company) => string]> = [
   ['Name', (c) => c.name],
@@ -63,6 +73,8 @@ export default function CompaniesPage() {
   const [searchInput, setSearchInput] = useState(search);
   useEffect(() => setSearchInput(search), [search]);
 
+  const { sorted, activeKey, dir, onSort } = useTableSort(rows, COMPANY_SORT);
+
   return (
     <>
       <SectionHeader
@@ -103,11 +115,11 @@ export default function CompaniesPage() {
             <table className="w-full min-w-[720px] text-[12.5px]">
               <thead>
                 <tr className="border-b border-b-default bg-sunken">
-                  <Th>Company</Th>
-                  <Th>Industry</Th>
-                  <Th>City</Th>
-                  <Th>GSTIN</Th>
-                  <Th className="text-right">Contacts</Th>
+                  <SortableTh label="Company" sortKey="name" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh label="Industry" sortKey="industry" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh label="City" sortKey="city" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh label="GSTIN" sortKey="gstin" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh label="Contacts" sortKey="contacts" align="right" activeKey={activeKey} dir={dir} onSort={onSort} />
                 </tr>
               </thead>
               <tbody>
@@ -120,7 +132,7 @@ export default function CompaniesPage() {
                     </td>
                   </tr>
                 ) : (
-                  rows.map((c) => <Row key={c.id} c={c} />)
+                  sorted.map((c) => <Row key={c.id} c={c} />)
                 )}
               </tbody>
             </table>
