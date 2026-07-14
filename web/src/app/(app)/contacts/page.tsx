@@ -3,14 +3,24 @@
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { User, Plus, Mail, Phone, Star } from 'lucide-react';
+import { User, Plus, Mail, Phone, Star, Download } from 'lucide-react';
 import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { endpoints } from '@/lib/api/endpoints';
 import { cn } from '@/lib/utils/cn';
 import { fmtPhone } from '@/lib/utils/format';
+import { downloadCsv } from '@/lib/utils/csv';
 import type { Company, Contact } from '@/lib/api/types';
+
+const CONTACT_CSV_COLS: Array<[string, (c: Contact) => string]> = [
+  ['Name', (c) => c.name],
+  ['Company', (c) => c.company_name ?? ''],
+  ['Designation', (c) => c.designation ?? ''],
+  ['Phone', (c) => c.phone ?? ''],
+  ['Email', (c) => c.email ?? ''],
+  ['Primary', (c) => (c.is_primary ? 'Yes' : 'No')],
+];
 
 export default function ContactsPage() {
   const router = useRouter();
@@ -37,9 +47,19 @@ export default function ContactsPage() {
         title="Contacts"
         subtitle={`${q.data?.count ?? 0} people on file`}
         actions={
-          <Button leftIcon={<Plus size={15} />} onClick={() => setNewOpen(true)}>
-            New contact
-          </Button>
+          <>
+            <Button
+              variant="secondary"
+              leftIcon={<Download size={14} />}
+              onClick={() => downloadCsv('contacts.csv', CONTACT_CSV_COLS, rows)}
+              disabled={rows.length === 0}
+            >
+              Export
+            </Button>
+            <Button leftIcon={<Plus size={15} />} onClick={() => setNewOpen(true)}>
+              New contact
+            </Button>
+          </>
         }
       />
       <div className="w-full px-3 pt-3 pb-5 xl:px-4">

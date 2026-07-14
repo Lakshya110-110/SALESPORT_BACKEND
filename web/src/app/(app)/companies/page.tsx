@@ -4,15 +4,26 @@ import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Building2, Plus, Users } from 'lucide-react';
+import { Building2, Plus, Users, Download } from 'lucide-react';
 import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { endpoints } from '@/lib/api/endpoints';
 import { cn } from '@/lib/utils/cn';
 import { fmtPhone } from '@/lib/utils/format';
+import { downloadCsv } from '@/lib/utils/csv';
 import { useMasterDataValues } from '@/lib/hooks/useMasterData';
 import type { Company } from '@/lib/api/types';
+
+const COMPANY_CSV_COLS: Array<[string, (c: Company) => string]> = [
+  ['Name', (c) => c.name],
+  ['Industry', (c) => c.industry ?? ''],
+  ['City', (c) => c.city ?? ''],
+  ['GSTIN', (c) => c.gstin ?? ''],
+  ['Phone', (c) => c.phone ?? ''],
+  ['Email', (c) => c.email ?? ''],
+  ['Contacts', (c) => String(c.contact_count ?? 0)],
+];
 
 const INDUSTRIES_FALLBACK = [
   'Dairy', 'FMCG', 'Beverages', 'Agri-inputs', 'Cold chain',
@@ -53,9 +64,19 @@ export default function CompaniesPage() {
         title="Companies"
         subtitle={`${q.data?.count ?? 0} on file`}
         actions={
-          <Button leftIcon={<Plus size={15} />} onClick={() => setNewOpen(true)}>
-            New company
-          </Button>
+          <>
+            <Button
+              variant="secondary"
+              leftIcon={<Download size={14} />}
+              onClick={() => downloadCsv('companies.csv', COMPANY_CSV_COLS, rows)}
+              disabled={rows.length === 0}
+            >
+              Export
+            </Button>
+            <Button leftIcon={<Plus size={15} />} onClick={() => setNewOpen(true)}>
+              New company
+            </Button>
+          </>
         }
       />
 

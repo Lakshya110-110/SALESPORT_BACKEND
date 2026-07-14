@@ -2,14 +2,23 @@
 
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Download } from 'lucide-react';
 import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { endpoints } from '@/lib/api/endpoints';
 import { session } from '@/lib/auth/session';
 import { cn } from '@/lib/utils/cn';
+import { downloadCsv } from '@/lib/utils/csv';
 import type { MasterDataItem } from '@/lib/api/types';
+
+const MD_CSV_COLS: Array<[string, (m: MasterDataItem) => string]> = [
+  ['Category', (m) => m.category],
+  ['Value', (m) => m.value],
+  ['Label', (m) => m.label ?? ''],
+  ['Order', (m) => String(m.order ?? '')],
+  ['Active', (m) => (m.is_active ? 'Yes' : 'No')],
+];
 
 const CATEGORIES: Array<{ key: MasterDataItem['category']; label: string }> = [
   { key: 'industry', label: 'Industries' },
@@ -32,17 +41,35 @@ export default function MasterDataPage() {
   const [category, setCategory] = useState<MasterDataItem['category']>('industry');
   const [addOpen, setAddOpen] = useState(false);
 
+  // Same query key as CategoryTable — react-query dedupes, so this reuses the
+  // already-fetched entries for the current category to feed the Export button.
+  const exportQ = useQuery({
+    queryKey: ['master-data', category],
+    queryFn: () => endpoints.masterData(category),
+  });
+  const exportRows = exportQ.data?.results ?? [];
+
   return (
     <>
       <SectionHeader
         title="Master data"
         subtitle="Dropdowns and tags used across the app."
         actions={
-          isAdmin ? (
-            <Button leftIcon={<Plus size={15} />} onClick={() => setAddOpen(true)}>
-              Add entry
+          <>
+            <Button
+              variant="secondary"
+              leftIcon={<Download size={14} />}
+              onClick={() => downloadCsv(`master-data-${category}.csv`, MD_CSV_COLS, exportRows)}
+              disabled={exportRows.length === 0}
+            >
+              Export
             </Button>
-          ) : undefined
+            {isAdmin && (
+              <Button leftIcon={<Plus size={15} />} onClick={() => setAddOpen(true)}>
+                Add entry
+              </Button>
+            )}
+          </>
         }
       />
       <div className="w-full px-3 pt-3 pb-5 xl:px-4">
