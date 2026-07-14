@@ -132,6 +132,7 @@ function CategoryTable({
   const rows = q.data?.results ?? [];
 
   return (
+    <div className="sp-scroll overflow-auto" style={{ maxHeight: 'calc(100dvh - 175px)' }}>
     <table className="w-full text-[12.5px]">
       <thead>
         <tr className="border-b border-b-default bg-sunken">
@@ -181,6 +182,7 @@ function CategoryTable({
         )}
       </tbody>
     </table>
+    </div>
   );
 }
 
@@ -283,7 +285,7 @@ function Th({ children, className }: { children?: React.ReactNode; className?: s
   return (
     <th
       className={cn(
-        'sticky top-[76px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
+        'sticky top-0 z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
         'shadow-[inset_0_-1px_0_var(--b-default)]',
         className,
       )}

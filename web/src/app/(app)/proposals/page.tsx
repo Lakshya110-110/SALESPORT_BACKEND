@@ -72,9 +72,8 @@ export default function ProposalsPage() {
         </MiniKpiStrip>
 
         <div className="rounded-lg border border-b-subtle bg-surface shadow-card">
-          {/* Search bar — sticky under the 76px section header so it stays put
-              while the list scrolls. The table headers dock just below it. */}
-          <div className="sticky top-[76px] z-20 flex items-center gap-2 rounded-t-lg border-b border-b-default bg-surface px-3 py-2.5">
+          {/* Search bar — above the internally-scrolling table (Enquiries pattern). */}
+          <div className="flex items-center gap-2 border-b border-b-default px-3 py-2.5">
             <div className="relative min-w-[200px] flex-1">
               <Search size={14} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-subtle" />
               <input
@@ -88,6 +87,7 @@ export default function ProposalsPage() {
               {filtered.length} of {rows.length}
             </span>
           </div>
+          <div className="sp-scroll overflow-auto" style={{ maxHeight: 'calc(100dvh - 300px)' }}>
           <table className="w-full min-w-[720px] text-[12.5px]">
               <thead>
                 <tr className="border-b border-b-default bg-sunken">
@@ -127,6 +127,7 @@ export default function ProposalsPage() {
                 )}
               </tbody>
             </table>
+          </div>
         </div>
       </div>
 
@@ -408,7 +409,7 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
   return (
     <th
       className={cn(
-        'sticky top-[133px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
+        'sticky top-0 z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
         'shadow-[inset_0_-1px_0_var(--b-default)]',
         className,
       )}

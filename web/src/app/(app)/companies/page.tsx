@@ -87,7 +87,9 @@ export default function CompaniesPage() {
 
       <div className="w-full px-3 pt-3 pb-5 xl:px-4">
         <div className="rounded-card border border-b-subtle bg-surface shadow-sm">
-          <div className="sticky top-[70px] z-20 flex items-center gap-2 rounded-t-card border-b border-b-subtle bg-surface p-3">
+          {/* Tools row (search + filters) — stays above the internally-scrolling
+              table, same pattern as Enquiries. */}
+          <div className="flex items-center gap-2 border-b border-b-subtle p-3">
             <SearchPill
               value={searchInput}
               onChange={setSearchInput}
@@ -97,6 +99,7 @@ export default function CompaniesPage() {
             <IndustryChips value={industry} onPick={(v) => setParam({ industry: v })} />
           </div>
 
+          <div className="sp-scroll overflow-auto" style={{ maxHeight: 'calc(100dvh - 190px)' }}>
             <table className="w-full min-w-[720px] text-[12.5px]">
               <thead>
                 <tr className="border-b border-b-default bg-sunken">
@@ -121,6 +124,7 @@ export default function CompaniesPage() {
                 )}
               </tbody>
             </table>
+          </div>
         </div>
       </div>
 
@@ -306,7 +310,7 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
   return (
     <th
       className={cn(
-        'sticky top-[130px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
+        'sticky top-0 z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
         'shadow-[inset_0_-1px_0_var(--b-default)]',
         className,
       )}

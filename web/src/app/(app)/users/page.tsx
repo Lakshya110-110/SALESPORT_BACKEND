@@ -110,9 +110,8 @@ export default function UsersPage() {
           </div>
         )}
         <div className="rounded-card border border-b-subtle bg-surface shadow-sm">
-          {/* Search + filters — sticky under the 76px section header so they
-              stay visible while the list scrolls; column headers dock below. */}
-          <div className="sticky top-[70px] z-20 flex items-center gap-2 rounded-t-card border-b border-b-subtle bg-surface p-3">
+          {/* Search + filters — above the internally-scrolling table (Enquiries pattern). */}
+          <div className="flex items-center gap-2 border-b border-b-subtle p-3">
             <SearchPill value={search} onChange={setSearch} placeholder="Search name / phone / email…" />
             <select
               value={roleFilter}
@@ -135,6 +134,7 @@ export default function UsersPage() {
             </select>
             <span className="shrink-0 text-[11.5px] text-subtle">{filtered.length} of {rows.length}</span>
           </div>
+          <div className="sp-scroll overflow-auto" style={{ maxHeight: 'calc(100dvh - 190px)' }}>
           <table className="w-full text-[12.5px]">
             <thead>
               <tr className="border-b border-b-default bg-sunken">
@@ -227,6 +227,7 @@ export default function UsersPage() {
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
@@ -496,7 +497,7 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
   return (
     <th
       className={cn(
-        'sticky top-[130px] z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
+        'sticky top-0 z-10 bg-sunken px-4 py-2 text-left text-[10.5px] font-semibold uppercase tracking-wider text-subtle',
         'shadow-[inset_0_-1px_0_var(--b-default)]',
         className,
       )}
