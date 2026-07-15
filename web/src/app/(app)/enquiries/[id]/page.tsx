@@ -534,7 +534,10 @@ function RequirementAnalysisCard({ e, onEdit }: { e: EnquiryDetail; onEdit: () =
           <div className="text-[11px] font-semibold uppercase tracking-wider text-subtle">
             Description
           </div>
-          <div className="mt-[3px] whitespace-pre-line text-[13.5px] leading-[1.55] text-text">
+          {/* Capped + scrolled: a long description used to grow this card
+              without limit, stretching the whole 2-col grid. `pr-1.5` keeps
+              the text clear of the scrollbar track. */}
+          <div className="sp-scroll mt-[3px] max-h-[150px] overflow-y-auto whitespace-pre-line pr-1.5 text-[13.5px] leading-[1.55] text-text">
             {e.description?.trim() || em}
           </div>
         </div>
