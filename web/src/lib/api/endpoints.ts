@@ -64,6 +64,9 @@ export const endpoints = {
         outcome?: string;
         note?: string;
         next_action?: string;
+        // The scheduled follow-up that drives the dashboard's My Queue. The
+        // backend has always accepted it; the type just never listed it.
+        next_action_date?: string | null;
         sentiment?: 'Hot' | 'Warm' | 'Cold' | '';
         direction?: 'Outbound' | 'Inbound' | '';
         duration_sec?: number | null;

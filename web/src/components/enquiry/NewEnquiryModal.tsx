@@ -7,6 +7,7 @@ import { Info } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { DateField } from '@/components/ui/DateField';
+import { AmountHint } from '@/components/ui/AmountHint';
 import { endpoints } from '@/lib/api/endpoints';
 import { cn } from '@/lib/utils/cn';
 import { inrInput } from '@/lib/utils/format';
@@ -252,6 +253,7 @@ export function NewEnquiryModal({
               className={inputCls}
               inputMode="decimal"
             />
+            <AmountHint value={f.expectedValue} />
           </Field>
           <Field label="Expected close date">
             <DateField

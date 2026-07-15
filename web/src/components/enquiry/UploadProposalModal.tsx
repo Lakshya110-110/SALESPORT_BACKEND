@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Upload, FileText } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { AmountHint } from '@/components/ui/AmountHint';
 import { endpoints } from '@/lib/api/endpoints';
 import { cn } from '@/lib/utils/cn';
 import { inrInput } from '@/lib/utils/format';
@@ -122,6 +123,7 @@ export function UploadProposalModal({
               placeholder="5,00,000"
               className={inputCls}
             />
+            <AmountHint value={amount} />
           </Field>
           <Field label="Status">
             <select

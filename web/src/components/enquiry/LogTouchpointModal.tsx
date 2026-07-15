@@ -8,7 +8,7 @@ import { Switch } from '@/components/ui/Switch';
 import { DateField } from '@/components/ui/DateField';
 import { endpoints } from '@/lib/api/endpoints';
 import { cn } from '@/lib/utils/cn';
-import { inrInput } from '@/lib/utils/format';
+import { inrInput, inrWords } from '@/lib/utils/format';
 import { todayLocalISO, ddmmToISO } from '@/lib/utils/date';
 import type { Touchpoint } from '@/lib/api/types';
 
@@ -343,6 +343,12 @@ export function LogTouchpointModal({
                 placeholder="Discount %"
                 className={cn(inputCls, 'h-9 w-[110px] py-[9px] px-[11px]')}
               />
+              {/* Inline rather than the block <AmountHint> the other amount
+                  fields use — this control sits in a centred flex row, so a
+                  block hint under the input would break the row's alignment. */}
+              {inrWords(amount) && (
+                <span className="text-[11px] font-medium text-muted">{inrWords(amount)}</span>
+              )}
             </>
           )}
         </div>

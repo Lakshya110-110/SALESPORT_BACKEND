@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { endpoints } from '@/lib/api/endpoints';
 import { cn } from '@/lib/utils/cn';
 import { inrInput } from '@/lib/utils/format';
+import { AmountHint } from '@/components/ui/AmountHint';
 
 /**
  * SetExpectedValueModal — the "Expected deal value" stat tile's writer.
@@ -82,6 +83,7 @@ export function SetExpectedValueModal({
             autoFocus
             className={inputCls}
           />
+          <AmountHint value={amount} />
         </Field>
         {submit.error && (
           <div className="rounded-md bg-danger-soft p-2 text-[12px] text-danger">

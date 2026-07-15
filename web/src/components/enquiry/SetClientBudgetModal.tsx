@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { endpoints } from '@/lib/api/endpoints';
 import { cn } from '@/lib/utils/cn';
 import { inrInput } from '@/lib/utils/format';
+import { AmountHint } from '@/components/ui/AmountHint';
 import { todayLocalISO } from '@/lib/utils/date';
 
 /**
@@ -93,6 +94,7 @@ export function SetClientBudgetModal({
             autoFocus
             className={inputCls}
           />
+          <AmountHint value={amount} />
         </Field>
         <Field label="Note">
           <input

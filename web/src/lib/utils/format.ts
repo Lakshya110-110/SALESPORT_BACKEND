@@ -52,6 +52,32 @@ export function fmtInrShort(n: number | string | null | undefined): string {
   return neg + '₹' + Math.round(abs);
 }
 
+/**
+ * Reads a rupee amount back in Indian units — "4,50,000" → "4.5 lakhs" — so a
+ * mis-typed zero is obvious while the amount is being entered. Accepts the raw
+ * field value (commas and all).
+ *
+ * Returns '' for empty/zero/invalid and for anything under ₹1,000: below that
+ * there's no comma grouping to misread, so a restatement adds nothing.
+ *
+ * NOTE: always hand trimZero a toFixed() string. It strips trailing zeros with
+ * /\.?0+$/, which mangles a bare "100" into "1" — toFixed always leaves a
+ * decimal point, which anchors the match.
+ */
+export function inrWords(v: number | string | null | undefined): string {
+  if (v === null || v === undefined || v === '') return '';
+  const num = Number(String(v).replace(/,/g, ''));
+  if (!isFinite(num) || num === 0) return '';
+  const abs = Math.abs(num);
+  if (abs < 1e3) return '';
+  const sign = num < 0 ? '-' : '';
+  const say = (n: number, one: string, many: string) =>
+    `${sign}₹${trimZero(n.toFixed(2))} ${n === 1 ? one : many}`;
+  if (abs >= 1e7) return say(abs / 1e7, 'crore', 'crores');
+  if (abs >= 1e5) return say(abs / 1e5, 'lakh', 'lakhs');
+  return say(abs / 1e3, 'thousand', 'thousand');
+}
+
 /** Initials from a full name, up to 2 characters. */
 export function initials(name: string | null | undefined): string {
   if (!name) return '?';
