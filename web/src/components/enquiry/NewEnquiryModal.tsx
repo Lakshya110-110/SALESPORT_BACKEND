@@ -80,6 +80,12 @@ export function NewEnquiryModal({
   const phoneDigits = (f.phone.startsWith('+91') ? f.phone.slice(3) : f.phone).replace(/\D/g, '');
   const phoneValid = phoneDigits.length === 10;
 
+  // Email was gated on "not empty" alone, so "abc" reached the API. Require a
+  // local part, an @, and a dotted domain — deliberately permissive about the
+  // exotic-but-legal (quoted local parts, new TLDs) and strict about the shape
+  // people actually get wrong.
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email.trim());
+
   // Live company suggestions (like the mockup's `neCo` autocomplete).
   const companyQ = useQuery({
     queryKey: ['companies', 'newenq', f.company],
@@ -165,7 +171,7 @@ export function NewEnquiryModal({
             type="submit"
             form="new-enq-form"
             loading={submit.isPending}
-            disabled={!f.company.trim() || !f.contact.trim() || !phoneValid || !f.email.trim()}
+            disabled={!f.company.trim() || !f.contact.trim() || !phoneValid || !emailValid}
           >
             Create Enquiry
           </Button>
@@ -234,6 +240,11 @@ export function NewEnquiryModal({
               placeholder="name@company.com"
               className={inputCls}
             />
+            {f.email.trim().length > 0 && !emailValid && (
+              <span className="mt-1 block text-[11px] text-danger">
+                Enter a valid email address — it needs an @ and a domain.
+              </span>
+            )}
           </Field>
           <Field label="Industry">
             <select value={f.industry} onChange={(e) => set('industry', e.target.value)} className={inputCls}>

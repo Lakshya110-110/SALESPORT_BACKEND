@@ -123,7 +123,9 @@ function DetailBody({ e }: { e: EnquiryDetail }) {
       <div className="mb-4 flex flex-wrap items-start gap-4">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="font-display text-[22px] font-extrabold text-text">
+            {/* break-words: a long unbroken company name has no spaces to
+                wrap on and would otherwise run past the header. */}
+            <h1 className="min-w-0 break-words font-display text-[22px] font-extrabold text-text">
               {e.company_name}
             </h1>
             <span
@@ -284,9 +286,12 @@ function StatStrip({ e }: { e: EnquiryDetail }) {
         style={{ gridAutoFlow: 'column', gridAutoColumns: 'minmax(120px, 1fr)' }}
       >
         {stats.map((s) => (
+          // `min-w-0`: a grid item defaults to min-width:auto, so a long
+          // unbroken value (a pasted name with no spaces) would force the
+          // column wider than its 1fr share and spill out of the card.
           <div
             key={s.label}
-            className="flex h-full flex-col rounded-lg border border-b-subtle bg-surface px-[15px] py-[14px] shadow-card"
+            className="flex h-full min-w-0 flex-col rounded-lg border border-b-subtle bg-surface px-[15px] py-[14px] shadow-card"
           >
             <div className="flex items-center justify-between gap-1">
               <div className="text-[10.5px] font-semibold uppercase leading-[1.3] tracking-[.4px] text-subtle">
@@ -294,10 +299,16 @@ function StatStrip({ e }: { e: EnquiryDetail }) {
               </div>
               {s.action}
             </div>
-            <div className={cn(
-              'mt-auto pt-[3px] text-[15px] font-semibold leading-[1.3] text-text',
-              s.money && 'font-mono tabular-nums',
-            )}>
+            {/* Truncated rather than wrapped: the strip is a single row of
+                fixed-height tiles, so one long value must not make every tile
+                taller. Full value stays available on hover. */}
+            <div
+              title={typeof s.value === 'string' ? s.value : undefined}
+              className={cn(
+                'mt-auto truncate pt-[3px] text-[15px] font-semibold leading-[1.3] text-text',
+                s.money && 'font-mono tabular-nums',
+              )}
+            >
               {s.value}
             </div>
           </div>
@@ -554,11 +565,13 @@ function InfoGrid({ items }: { items: Array<[string, ReactNode]> }) {
   return (
     <div className="grid grid-cols-2 gap-x-[18px] gap-y-[13px] py-1">
       {items.map(([label, value]) => (
-        <div key={label}>
+        // min-w-0 + break-words so a long unbroken value wraps inside its
+        // half of the grid instead of widening the column past 50%.
+        <div key={label} className="min-w-0">
           <div className="text-[11px] font-semibold uppercase tracking-wider text-subtle">
             {label}
           </div>
-          <div className="mt-[3px] text-[13.5px] text-text">{value}</div>
+          <div className="mt-[3px] break-words text-[13.5px] text-text">{value}</div>
         </div>
       ))}
     </div>
