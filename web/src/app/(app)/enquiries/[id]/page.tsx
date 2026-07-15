@@ -536,8 +536,12 @@ function RequirementAnalysisCard({ e, onEdit }: { e: EnquiryDetail; onEdit: () =
           </div>
           {/* Capped + scrolled: a long description used to grow this card
               without limit, stretching the whole 2-col grid. `pr-1.5` keeps
-              the text clear of the scrollbar track. */}
-          <div className="sp-scroll mt-[3px] max-h-[150px] overflow-y-auto whitespace-pre-line pr-1.5 text-[13.5px] leading-[1.55] text-text">
+              the text clear of the scrollbar track.
+              `break-words` is load-bearing: without it an unbroken run of
+              characters (no spaces to wrap on) lays out as one very wide
+              line, so the block stays one line tall, the max-height never
+              engages, and you get a sideways line instead of a scrollbar. */}
+          <div className="sp-scroll mt-[3px] max-h-[150px] overflow-y-auto whitespace-pre-line break-words pr-1.5 text-[13.5px] leading-[1.55] text-text">
             {e.description?.trim() || em}
           </div>
         </div>
