@@ -162,6 +162,12 @@ export default function EnquiriesPage() {
   const lostCount = dash?.by_stage?.find((r) => r.status === 'Lost')?.count ?? 0;
   const openCount = dash?.open_enquiries ?? 0;
   const pipelineValue = Number(dash?.pipeline_value ?? 0);
+  // Every tile in the strip reads from the dashboard payload, which is always
+  // whole-pipeline. Total used to come from the filtered list instead, so
+  // filtering to Won put "Total 17" next to "Open 50" — a total smaller than
+  // its own subset. The strip is the overview; the subtitle below says what
+  // the table is actually showing.
+  const grandTotal = dash?.total_enquiries ?? total;
 
   useEffect(() => { setSelected(new Set()); }, [page, search, status, type, source, industry, ordering, dateFrom, dateTo]);
 
@@ -180,7 +186,15 @@ export default function EnquiriesPage() {
     <>
       <SectionHeader
         title="Enquiries"
-        subtitle={`${total} enquiries.`}
+        // Says what the table is showing, which is the one thing the KPI strip
+        // can't: the strip is always whole-pipeline. Repeating the count here
+        // was a third copy of the Total tile sitting directly beneath it.
+        // Filtered, this is the only place the full size is still visible.
+        subtitle={
+          hasActiveFilters
+            ? `Showing ${total} of ${grandTotal} — filters applied`
+            : 'Every lead, with its timeline, meetings and proposals in one place.'
+        }
         hideSearch={false}
         actions={
           <>
@@ -203,7 +217,7 @@ export default function EnquiriesPage() {
         <MiniKpiStrip columns={5}>
           <MiniKpi
             label="Total"
-            value={total}
+            value={grandTotal}
             tone="primary"
             icon={<Briefcase size={17} strokeWidth={1.9} />}
           />
