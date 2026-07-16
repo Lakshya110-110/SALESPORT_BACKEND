@@ -193,17 +193,32 @@ class ContactViewSet(viewsets.ModelViewSet):
 # Mirrors VALUE_BANDS in web/src/lib/utils/valueBand.ts — the frontend owns the
 # labels, this owns the filtering, and the ids are the wire contract between
 # them. Edit both together, exactly as leadType.ts / derived_type are kept in
-# step. Bands are contiguous so every amount belongs to exactly one, and the ids
-# name the real boundaries: "1-4" is 1,00,000 <= x < 4,00,000, so ₹3.5 L is in
-# "1-4" and ₹4 L exactly is in "4-7". Never leave a hole between two ids.
+# step.
+#
+# Segments of three lakhs that SHARE their boundary: "3-6" is
+# 3,00,000 <= x < 6,00,000, so ₹3 L exactly is "3-6" and ₹3.5 L is "3-6" too.
+# Sharing the edge is the point — 1-3 / 4-6 style cut-offs leave ₹3.5 L in a
+# hole that matches no band. Never leave a gap between two ids.
+#
+# There is deliberately no band below ₹1 L: deals do not go under a lakh.
 VALUE_BANDS = {
-    "lt1": (0, 100000),
-    "1-4": (100000, 400000),
-    "4-7": (400000, 700000),
-    "7-11": (700000, 1100000),
-    "11-16": (1100000, 1600000),
-    "16-26": (1600000, 2600000),
-    "26-50": (2600000, 5000000),
+    "1-3": (100000, 300000),
+    "3-6": (300000, 600000),
+    "6-9": (600000, 900000),
+    "9-12": (900000, 1200000),
+    "12-15": (1200000, 1500000),
+    "15-18": (1500000, 1800000),
+    "18-21": (1800000, 2100000),
+    "21-24": (2100000, 2400000),
+    "24-27": (2400000, 2700000),
+    "27-30": (2700000, 3000000),
+    "30-33": (3000000, 3300000),
+    "33-36": (3300000, 3600000),
+    "36-39": (3600000, 3900000),
+    "39-42": (3900000, 4200000),
+    "42-45": (4200000, 4500000),
+    "45-48": (4500000, 4800000),
+    "48-50": (4800000, 5000000),
     "50+": (5000000, None),
 }
 
