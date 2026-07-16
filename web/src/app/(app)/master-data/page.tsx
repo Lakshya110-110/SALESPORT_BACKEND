@@ -156,7 +156,7 @@ function CategoryTable({
           Array.from({ length: 4 }).map((_, i) => (
             <tr key={i} className="border-t border-b-subtle">
               <td colSpan={canEdit ? 4 : 3} className="px-4 py-3">
-                <div className="h-4 animate-pulse rounded bg-soft" />
+                <div className="h-4 sp-skeleton" />
               </td>
             </tr>
           ))
@@ -171,7 +171,7 @@ function CategoryTable({
             <tr key={m.id} className="border-t border-b-subtle hover:bg-soft">
               <Td><span className="font-mono">{m.value}</span></Td>
               <Td>{m.label}</Td>
-              <Td className="text-right font-mono text-subtle">{m.order}</Td>
+              <Td className="text-right font-mono tabular-nums text-subtle">{m.order}</Td>
               {canEdit && (
                 <Td className="text-right">
                   <button

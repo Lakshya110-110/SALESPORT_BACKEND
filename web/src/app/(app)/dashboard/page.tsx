@@ -11,6 +11,7 @@ import { endpoints } from '@/lib/api/endpoints';
 import { session } from '@/lib/auth/session';
 import { periodStartISO } from '@/lib/utils/date';
 import { KpiStrip } from '@/components/dashboard/KpiStrip';
+import { Reveal } from '@/components/ui/Reveal';
 import { ConversionFunnel } from '@/components/dashboard/ConversionFunnel';
 import {
   EnquiriesByMonth,
@@ -151,21 +152,28 @@ export default function DashboardPage() {
 
             {/* Two-column layout — 2fr left / 1fr right on desktop, stack on mobile.
                 Gap/margin scale is 14px throughout to match the mockup's rhythm. */}
+            {/* Each card reveals as it scrolls into view, entering from the
+                direction of travel. Small stagger between side-by-side pairs
+                so a row arrives as a sequence rather than a flash. The KPI
+                strip above is deliberately NOT wrapped — it's above the fold
+                and already has its own load stagger. */}
             <div className="mt-[14px] grid grid-cols-1 gap-[14px] xl:grid-cols-3">
               <div className="space-y-[14px] xl:col-span-2">
-                <StalledDeals enquiries={stalledQ.data?.results ?? []} />
-                <ConversionFunnel data={dashboard} />
+                <Reveal><StalledDeals enquiries={stalledQ.data?.results ?? []} /></Reveal>
+                <Reveal><ConversionFunnel data={dashboard} /></Reveal>
                 <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2">
-                  <EnquiriesByMonth enquiries={enquiries} />
-                  <PipelineTrend enquiries={enquiries} />
+                  <Reveal><EnquiriesByMonth enquiries={enquiries} /></Reveal>
+                  <Reveal delay={70}><PipelineTrend enquiries={enquiries} /></Reveal>
                 </div>
                 <div className="grid grid-cols-1 gap-[14px] md:grid-cols-2">
-                  <EnquirySource enquiries={enquiries} />
-                  <WonVsLost
-                    wonCount={wonCount}
-                    lostCount={lostCount}
-                    wonValue={Number(dashboard.won_value || 0)}
-                  />
+                  <Reveal><EnquirySource enquiries={enquiries} /></Reveal>
+                  <Reveal delay={70}>
+                    <WonVsLost
+                      wonCount={wonCount}
+                      lostCount={lostCount}
+                      wonValue={Number(dashboard.won_value || 0)}
+                    />
+                  </Reveal>
                 </div>
               </div>
 
@@ -174,11 +182,11 @@ export default function DashboardPage() {
                   fixed-content cards above it, keeping the two columns
                   vertically balanced. */}
               <div className="flex flex-col gap-[14px]">
-                <WhyWeLose data={dashboard} />
-                <MyQueue enquiries={queueQ.data?.results ?? []} />
-                <RecentActivity enquiries={recentEnquiries} />
-                {isAdmin && <TeamPerformance data={dashboard} />}
-                <TopIndustries enquiries={enquiries} />
+                <Reveal><WhyWeLose data={dashboard} /></Reveal>
+                <Reveal><MyQueue enquiries={queueQ.data?.results ?? []} /></Reveal>
+                <Reveal><RecentActivity enquiries={recentEnquiries} /></Reveal>
+                {isAdmin && <Reveal><TeamPerformance data={dashboard} /></Reveal>}
+                <Reveal><TopIndustries enquiries={enquiries} /></Reveal>
               </div>
             </div>
           </>

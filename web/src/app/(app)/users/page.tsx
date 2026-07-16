@@ -4,6 +4,7 @@ import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Pencil, Plus, ShieldCheck, Trash2, User as UserIcon, Download } from 'lucide-react';
 import { SearchPill } from '@/components/ui/SearchPill';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { useTableSort } from '@/lib/hooks/useTableSort';
 import { SectionHeader } from '@/components/shell/SectionHeader';
@@ -156,19 +157,36 @@ export default function UsersPage() {
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i} className="border-t border-b-subtle">
                     <td colSpan={6} className="px-4 py-3">
-                      <div className="h-4 animate-pulse rounded bg-soft" />
+                      <div className="h-4 sp-skeleton" />
                     </td>
                   </tr>
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-10 text-center text-[12.5px] text-subtle">
-                    {rows.length === 0 ? 'No users yet.' : 'No users match your search or filters.'}
+                  <td colSpan={6}>
+                    {rows.length === 0 ? (
+                      <EmptyState
+                        icon={UserIcon}
+                        title="No users yet"
+                        message="Add your team here. Only people on this list can sign in — to the web console or the mobile app."
+                        action={isAdmin ? (
+                          <Button size="sm" leftIcon={<Plus size={14} />} onClick={() => setNewOpen(true)}>
+                            Add user
+                          </Button>
+                        ) : undefined}
+                      />
+                    ) : (
+                      <EmptyState
+                        icon={UserIcon}
+                        title="No users match your search or filters"
+                        message="Try a different name, phone or email — or reset the role and status filters."
+                      />
+                    )}
                   </td>
                 </tr>
               ) : (
                 sorted.map((u) => (
-                  <tr key={u.id} className="border-t border-b-subtle hover:bg-soft">
+                  <tr key={u.id} className="sp-row-hover border-t border-b-subtle hover:bg-soft">
                     <Td>
                       <div className="flex items-center gap-2">
                         <div
@@ -180,7 +198,7 @@ export default function UsersPage() {
                         <span className="font-semibold text-text">{u.name}</span>
                       </div>
                     </Td>
-                    <Td><span className="font-mono">{fmtPhone(u.phone)}</span></Td>
+                    <Td><span className="font-mono tabular-nums">{fmtPhone(u.phone)}</span></Td>
                     <Td>{u.email || '—'}</Td>
                     <Td>
                       <RoleBadge role={u.role} />

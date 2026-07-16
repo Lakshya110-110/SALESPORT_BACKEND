@@ -206,7 +206,63 @@ body.dark::before {
 }
 .card-in { animation: card-in 220ms cubic-bezier(.22, 1, .36, 1) both; }
 
-/* Reduced-motion global. */
+/* --- Scroll reveal (components/ui/Reveal.tsx) ---
+   Enters from the direction of travel: scrolling down, content rises from
+   below; scrolling up, it drops from above. Transition rather than animation
+   so the settled state is just the element's normal state — nothing to
+   unwind, and no `both` fill left holding a transform.
+   Transform + opacity only: both composite on the GPU, so a reveal never
+   triggers layout. 8px is a hint of movement, not a journey. */
+.sp-reveal {
+  opacity: 0;
+  transform: translate3d(0, 8px, 0);
+  transition:
+    opacity var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+  will-change: opacity, transform;
+}
+.sp-reveal-from-top { transform: translate3d(0, -8px, 0); }
+.sp-reveal[data-revealed] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  /* Drop the compositor hint once it's settled — leaving will-change on
+     permanently keeps a layer alive per card for nothing. */
+  will-change: auto;
+}
+
+/* --- Skeleton shimmer ---
+   A travelling highlight reads as "loading" in a way a pulsing block doesn't:
+   it implies content arriving rather than something merely blinking. */
+@keyframes sp-shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+.sp-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--soft) 25%,
+    var(--sunken) 37%,
+    var(--soft) 63%
+  );
+  background-size: 200% 100%;
+  animation: sp-shimmer 1.4s linear infinite;
+  border-radius: var(--r-md);
+}
+
+/* --- Row hover lift ---
+   Colour alone is a flat state change; a 1px nudge makes the row feel like it
+   responds. Cheap: transform only. */
+.sp-row-hover {
+  transition: background-color var(--dur-fast) var(--ease-out),
+              transform var(--dur-fast) var(--ease-out);
+}
+.sp-row-hover:hover { transform: translate3d(2px, 0, 0); }
+
+/* Reduced-motion global.
+   The reveal is ALSO short-circuited in JS (Reveal.tsx checks the same query
+   and mounts revealed), because clamping the duration here would still run the
+   transform — this keeps the element at its resting position from the start.
+   Belt and braces: this block still covers anything that slips through. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -216,4 +272,7 @@ body.dark::before {
     transition-duration: 1ms !important;
     scroll-behavior: auto !important;
   }
+  .sp-reveal { opacity: 1; transform: none; }
+  .sp-row-hover:hover { transform: none; }
+  .sp-skeleton { animation: none; }
 }

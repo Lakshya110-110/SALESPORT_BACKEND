@@ -28,6 +28,8 @@ import {
 import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { MiniKpi, MiniKpiStrip } from '@/components/ui/MiniKpi';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Reveal } from '@/components/ui/Reveal';
 import { useModals } from '@/components/shell/ModalHost';
 import { DateField } from '@/components/ui/DateField';
 import { endpoints } from '@/lib/api/endpoints';
@@ -112,6 +114,14 @@ export default function EnquiriesPage() {
     if (!('page' in patch)) next.delete('page');
     router.push(`/enquiries${next.toString() ? '?' + next.toString() : ''}`);
   };
+
+  // Drives the empty state: an empty list means something different when the
+  // user has narrowed it than when the pipeline is genuinely empty.
+  const hasActiveFilters = Boolean(
+    search || status || type || source || industry || valueBand || dateFrom || dateTo,
+  );
+  const clearFilters = () =>
+    router.push('/enquiries');
 
   const listQ = useQuery({
     queryKey: [
@@ -336,7 +346,7 @@ export default function EnquiriesPage() {
                   Array.from({ length: 6 }).map((_, i) => (
                     <tr key={i} className="border-t border-b-subtle">
                       <td colSpan={10} className="px-4 py-3">
-                        <div className="h-4 animate-pulse rounded bg-soft" />
+                        <div className="h-4 sp-skeleton" />
                       </td>
                     </tr>
                   ))
@@ -348,8 +358,34 @@ export default function EnquiriesPage() {
                   </tr>
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="p-10 text-center text-[12.5px] text-subtle">
-                      No enquiries match these filters.
+                    <td colSpan={10}>
+                      {/* "You have no enquiries" and "your filters match none"
+                          are different situations — showing the first when the
+                          second is true makes people think their data is gone.
+                          So the copy and the action both follow the filters. */}
+                      {hasActiveFilters ? (
+                        <EmptyState
+                          icon={SearchIcon}
+                          title="No enquiries match these filters"
+                          message="Nothing here fits every filter you've applied. Try widening one, or clear them to see the full pipeline."
+                          action={
+                            <Button variant="secondary" size="sm" onClick={clearFilters}>
+                              Clear all filters
+                            </Button>
+                          }
+                        />
+                      ) : (
+                        <EmptyState
+                          icon={Briefcase}
+                          title="No enquiries yet"
+                          message="Every lead your team logs shows up here — with its timeline, meetings and proposals in one place."
+                          action={
+                            <Button size="sm" leftIcon={<Plus size={14} />} onClick={() => modals.open('newEnquiry')}>
+                              New Enquiry
+                            </Button>
+                          }
+                        />
+                      )}
                     </td>
                   </tr>
                 ) : (
@@ -429,7 +465,7 @@ function Row({
         <Cbx checked={selected} onChange={onToggle} />
       </Td>
       <Td>
-        <div className="font-mono text-[11.5px] font-semibold text-text">{e.lead_id}</div>
+        <div className="font-mono tabular-nums text-[11.5px] font-semibold text-text">{e.lead_id}</div>
         <div className="mt-0.5 text-[10.5px] font-medium text-subtle">{ddmm(e.created_at)}</div>
       </Td>
       <Td>

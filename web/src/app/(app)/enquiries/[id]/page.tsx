@@ -148,7 +148,7 @@ function DetailBody({ e }: { e: EnquiryDetail }) {
             </span>
           </div>
           <div className="mt-1 text-[12px] text-subtle">
-            <span className="font-mono text-text/70">{e.lead_id}</span>
+            <span className="font-mono tabular-nums text-text/70">{e.lead_id}</span>
             {e.industry && <> · {e.industry}</>}
             {e.owner_name && <> · owned by {e.owner_name}</>}
           </div>
@@ -734,22 +734,22 @@ function DetailSkeleton() {
   return (
     <>
       <div className="mb-4 flex items-center gap-4">
-        <div className="h-8 w-56 animate-pulse rounded bg-soft" />
-        <div className="h-6 w-24 animate-pulse rounded-full bg-soft" />
+        <div className="h-8 w-56 sp-skeleton" />
+        <div className="h-6 w-24 sp-skeleton rounded-full" />
       </div>
       <div className="mb-[14px] grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
         {Array.from({ length: 7 }).map((_, i) => (
-          <div key={i} className="h-16 animate-pulse rounded-lg bg-soft" />
+          <div key={i} className="h-16 sp-skeleton rounded-lg" />
         ))}
       </div>
       <div className="grid grid-cols-1 gap-[14px] lg:grid-cols-2">
-        <div className="h-96 animate-pulse rounded-lg bg-soft" />
+        <div className="h-96 sp-skeleton rounded-lg" />
         <div className="space-y-[14px]">
-          <div className="h-48 animate-pulse rounded-lg bg-soft" />
-          <div className="h-48 animate-pulse rounded-lg bg-soft" />
+          <div className="h-48 sp-skeleton rounded-lg" />
+          <div className="h-48 sp-skeleton rounded-lg" />
         </div>
       </div>
-      <div className="mt-[14px] h-72 animate-pulse rounded-lg bg-soft" />
+      <div className="mt-[14px] h-72 sp-skeleton rounded-lg" />
     </>
   );
 }

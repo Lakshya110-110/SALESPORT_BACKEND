@@ -114,7 +114,7 @@ export default function ProposalsPage() {
                   Array.from({ length: 6 }).map((_, i) => (
                     <tr key={i} className="border-t border-b-subtle">
                       <td colSpan={5} className="px-4 py-3">
-                        <div className="h-4 animate-pulse rounded bg-soft" />
+                        <div className="h-4 sp-skeleton" />
                       </td>
                     </tr>
                   ))
@@ -286,7 +286,7 @@ function UploadProposalModal({ open, onClose }: { open: boolean; onClose: () => 
                       className="flex w-full items-center justify-between px-3 py-2 text-left text-[12.5px] hover:bg-soft"
                     >
                       <span className="truncate text-text">{e.company_name}</span>
-                      <span className="ml-2 shrink-0 font-mono text-[11px] text-subtle">{e.lead_id}</span>
+                      <span className="ml-2 shrink-0 font-mono tabular-nums text-[11px] text-subtle">{e.lead_id}</span>
                     </button>
                   </li>
                 ))}

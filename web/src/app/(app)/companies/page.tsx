@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils/cn';
 import { fmtPhone } from '@/lib/utils/format';
 import { downloadCsv } from '@/lib/utils/csv';
 import { SearchPill } from '@/components/ui/SearchPill';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { SortableTh } from '@/components/ui/SortableTh';
 import { useTableSort } from '@/lib/hooks/useTableSort';
 import { useMasterDataValues } from '@/lib/hooks/useMasterData';
@@ -128,8 +129,12 @@ export default function CompaniesPage() {
                   <SkelRows n={6} cols={5} />
                 ) : rows.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-10 text-center text-[12.5px] text-subtle">
-                      No companies match these filters.
+                    <td colSpan={5}>
+                      <EmptyState
+                        icon={Building2}
+                        title="No companies match these filters"
+                        message="Companies are created automatically the first time you log an enquiry against them."
+                      />
                     </td>
                   </tr>
                 ) : (
@@ -148,7 +153,7 @@ export default function CompaniesPage() {
 
 function Row({ c }: { c: Company }) {
   return (
-    <tr className="border-t border-b-subtle hover:bg-soft">
+    <tr className="sp-row-hover border-t border-b-subtle hover:bg-soft">
       <Td>
         <Link
           href={`/enquiries?search=${encodeURIComponent(c.name)}`}
@@ -165,9 +170,9 @@ function Row({ c }: { c: Company }) {
       </Td>
       <Td>{c.industry}</Td>
       <Td>{c.city || '—'}</Td>
-      <Td>{c.gstin ? <span className="font-mono">{c.gstin}</span> : '—'}</Td>
+      <Td>{c.gstin ? <span className="font-mono tabular-nums">{c.gstin}</span> : '—'}</Td>
       <Td className="text-right">
-        <span className="inline-flex items-center gap-1 rounded-sm bg-soft px-1.5 py-0.5 font-mono text-[11px] text-muted">
+        <span className="inline-flex items-center gap-1 rounded-sm bg-soft px-1.5 py-0.5 font-mono tabular-nums text-[11px] text-muted">
           <Users size={10} />
           {c.contact_count}
         </span>
@@ -345,7 +350,7 @@ function SkelRows({ n, cols }: { n: number; cols: number }) {
       {Array.from({ length: n }).map((_, i) => (
         <tr key={i} className="border-t border-b-subtle">
           <td colSpan={cols} className="px-4 py-3">
-            <div className="h-4 animate-pulse rounded bg-soft" />
+            <div className="h-4 sp-skeleton" />
           </td>
         </tr>
       ))}

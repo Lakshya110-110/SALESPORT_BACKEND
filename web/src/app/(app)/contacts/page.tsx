@@ -109,7 +109,7 @@ export default function ContactsPage() {
                   Array.from({ length: 6 }).map((_, i) => (
                     <tr key={i} className="border-t border-b-subtle">
                       <td colSpan={6} className="px-4 py-3">
-                        <div className="h-4 animate-pulse rounded bg-soft" />
+                        <div className="h-4 sp-skeleton" />
                       </td>
                     </tr>
                   ))
@@ -148,7 +148,7 @@ function Row({ c }: { c: Contact }) {
       <Td>{c.designation || '—'}</Td>
       <Td>
         {c.phone ? (
-          <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1 font-mono text-primary hover:underline">
+          <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1 font-mono tabular-nums text-primary hover:underline">
             <Phone size={11} /> {fmtPhone(c.phone)}
           </a>
         ) : '—'}

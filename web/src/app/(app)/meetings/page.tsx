@@ -879,7 +879,7 @@ function Skel() {
     <ul className="divide-y divide-b-subtle">
       {Array.from({ length: 5 }).map((_, i) => (
         <li key={i} className="p-4">
-          <div className="h-6 animate-pulse rounded bg-soft" />
+          <div className="h-6 sp-skeleton" />
         </li>
       ))}
     </ul>
