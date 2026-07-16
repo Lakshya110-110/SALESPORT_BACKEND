@@ -511,7 +511,16 @@ function EnquiryDetailsCard({ e, onEdit }: { e: EnquiryDetail; onEdit: () => voi
 
 function RequirementAnalysisCard({ e, onEdit }: { e: EnquiryDetail; onEdit: () => void }) {
   const em = <span className="italic text-subtle">—</span>;
-  const expectedValue = Number(e.expected_value) > 0 ? fmtInr(e.expected_value) : em;
+  // Exact figure with its derived band beneath — same band the stat tile, the
+  // list filter and the enquiry form show, all read from VALUE_BANDS.
+  const expectedValue = Number(e.expected_value) > 0 ? (
+    <>
+      {fmtInr(e.expected_value)}
+      <span className="mt-[1px] block text-[11px] font-semibold text-subtle">
+        {bandLabel(e.expected_value)}
+      </span>
+    </>
+  ) : em;
   const expectedClose = e.expected_close_date ? ddmm(e.expected_close_date) : em;
   return (
     <Card>

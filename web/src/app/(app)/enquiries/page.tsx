@@ -34,7 +34,7 @@ import { endpoints } from '@/lib/api/endpoints';
 import { fmtInrShort } from '@/lib/utils/format';
 import { ddmm, timeAgo, avatarColor, initials, fmtPhone } from '@/lib/utils/format';
 import { isValidDDMM, ddmmToISO, isoToDDMM } from '@/lib/utils/date';
-import { VALUE_BANDS } from '@/lib/utils/valueBand';
+import { VALUE_BANDS, bandLabel } from '@/lib/utils/valueBand';
 import { useMasterDataValues } from '@/lib/hooks/useMasterData';
 import { cn } from '@/lib/utils/cn';
 import type { EnquiryListItem } from '@/lib/api/types';
@@ -1273,6 +1273,9 @@ function exportEnquiriesCsv(rows: EnquiryListItem[]) {
     ['Enquiry type',     (e) => e.enquiry_type],
     ['Status',           (e) => e.status],
     ['Expected value',   (e) => String(e.expected_value)],
+    // Exported alongside the raw figure, not instead of it — so a pivot can
+    // group by band while the exact number stays available to sum.
+    ['Deal size',        (e) => bandLabel(e.expected_value)],
     ['Expected close',   (e) => e.expected_close_date ?? ''],
     ['Owner',            (e) => e.owner_name ?? ''],
     ['Last activity',    (e) => e.updated_at],

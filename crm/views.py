@@ -193,14 +193,16 @@ class ContactViewSet(viewsets.ModelViewSet):
 # Mirrors VALUE_BANDS in web/src/lib/utils/valueBand.ts — the frontend owns the
 # labels, this owns the filtering, and the ids are the wire contract between
 # them. Edit both together, exactly as leadType.ts / derived_type are kept in
-# step. Bands are contiguous so every amount belongs to exactly one.
+# step. Bands are contiguous so every amount belongs to exactly one, and the ids
+# name the real boundaries: "1-4" is 1,00,000 <= x < 4,00,000, so ₹3.5 L is in
+# "1-4" and ₹4 L exactly is in "4-7". Never leave a hole between two ids.
 VALUE_BANDS = {
     "lt1": (0, 100000),
-    "1-3": (100000, 400000),
-    "4-6": (400000, 700000),
-    "7-10": (700000, 1100000),
-    "11-15": (1100000, 1600000),
-    "16-25": (1600000, 2600000),
+    "1-4": (100000, 400000),
+    "4-7": (400000, 700000),
+    "7-11": (700000, 1100000),
+    "11-16": (1100000, 1600000),
+    "16-26": (1600000, 2600000),
     "26-50": (2600000, 5000000),
     "50+": (5000000, None),
 }

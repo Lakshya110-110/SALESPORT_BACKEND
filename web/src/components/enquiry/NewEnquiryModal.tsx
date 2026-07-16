@@ -264,7 +264,7 @@ export function NewEnquiryModal({
               className={inputCls}
               inputMode="decimal"
             />
-            <AmountHint value={f.expectedValue} />
+            <AmountHint value={f.expectedValue} showBand />
           </Field>
           <Field label="Expected close date">
             <DateField

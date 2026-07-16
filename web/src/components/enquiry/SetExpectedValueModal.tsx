@@ -83,7 +83,7 @@ export function SetExpectedValueModal({
             autoFocus
             className={inputCls}
           />
-          <AmountHint value={amount} />
+          <AmountHint value={amount} showBand />
         </Field>
         {submit.error && (
           <div className="rounded-md bg-danger-soft p-2 text-[12px] text-danger">
