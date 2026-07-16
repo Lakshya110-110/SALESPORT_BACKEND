@@ -69,9 +69,20 @@
   --sh-pop: 0 12px 30px rgba(27, 42, 107, .12);
 
   /* --- Fonts --- */
-  --display: 'Sora', system-ui, sans-serif;
-  --body: 'Inter', system-ui, sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, monospace;
+  /* Must start with the next/font variables. The webfonts are loaded by
+     src/app/fonts.ts under HASHED family names ("__Sora_c84d5f"), reachable
+     only through the vars it exposes — the literal names below are not
+     installed on anyone's machine.
+     Naming the literal family alone is a SILENT failure: the browser finds no
+     "Sora", drops to system-ui, and nothing errors. Measured before this fix,
+     headings rendered pixel-identical to plain system-ui, and mono to generic
+     ui-monospace — i.e. two of the three fonts had never once painted. Only
+     --body escaped, because globals.css happened to use var(--font-inter)
+     directly instead of this token.
+     The literal names stay as a fallback for a non-Next consumer of this file. */
+  --display: var(--font-sora), 'Sora', system-ui, sans-serif;
+  --body: var(--font-inter), 'Inter', system-ui, sans-serif;
+  --mono: var(--font-jetbrains-mono), 'JetBrains Mono', ui-monospace, monospace;
 
   /* --- Motion (kept from prior tokens; the mockup uses inline durations) --- */
   --dur-fast: 120ms;
