@@ -19,6 +19,7 @@ import {
   Star,
   Building2,
   Calendar,
+  IndianRupee,
   Users as UsersIcon,
 } from 'lucide-react';
 import {
@@ -33,6 +34,7 @@ import { endpoints } from '@/lib/api/endpoints';
 import { fmtInrShort } from '@/lib/utils/format';
 import { ddmm, timeAgo, avatarColor, initials, fmtPhone } from '@/lib/utils/format';
 import { isValidDDMM, ddmmToISO, isoToDDMM } from '@/lib/utils/date';
+import { VALUE_BANDS } from '@/lib/utils/valueBand';
 import { useMasterDataValues } from '@/lib/hooks/useMasterData';
 import { cn } from '@/lib/utils/cn';
 import type { EnquiryListItem } from '@/lib/api/types';
@@ -81,6 +83,7 @@ export default function EnquiriesPage() {
   const type = sp.get('enquiry_type') ?? '';
   const source = sp.get('source') ?? '';
   const industry = sp.get('industry') ?? '';
+  const valueBand = sp.get('value_band') ?? '';
   const dateFrom = sp.get('date_from') ?? '';
   const dateTo = sp.get('date_to') ?? '';
   const ordering = sp.get('ordering') ?? '-created_at';
@@ -113,7 +116,7 @@ export default function EnquiriesPage() {
   const listQ = useQuery({
     queryKey: [
       'enquiries', 'list',
-      { search, status, type, source, industry, dateFrom, dateTo, ordering, page, page_size: PAGE_SIZE },
+      { search, status, type, source, industry, valueBand, dateFrom, dateTo, ordering, page, page_size: PAGE_SIZE },
     ],
     queryFn: () => endpoints.enquiries.list({
       search: search || undefined,
@@ -123,6 +126,8 @@ export default function EnquiriesPage() {
       derived_type: type || undefined,
       source: source || undefined,
       industry: industry || undefined,
+      // Same deal: banded on expected_value server-side, for the same reason.
+      value_band: valueBand || undefined,
       date_from: dateFrom || undefined,
       date_to: dateTo || undefined,
       ordering,
@@ -256,6 +261,12 @@ export default function EnquiriesPage() {
               icon={<Building2 size={12} />} label="Industry" value={industry}
               options={industryOptions}
               onPick={(v) => setParam({ industry: v })}
+            />
+            <FilterChip
+              icon={<IndianRupee size={12} />} label="Deal size" value={valueBand}
+              options={VALUE_BANDS.map((b) => b.id)}
+              optionLabel={(id) => VALUE_BANDS.find((b) => b.id === id)?.label ?? id}
+              onPick={(v) => setParam({ value_band: v })}
             />
             <DateRangeFilterChip
               from={dateFrom}
@@ -781,6 +792,7 @@ function FilterChip({
   options,
   onPick,
   disabled,
+  optionLabel = (v) => v,
 }: {
   icon?: ReactNode;
   label: string;
@@ -788,6 +800,12 @@ function FilterChip({
   options: string[];
   onPick: (v: string | null) => void;
   disabled?: boolean;
+  /**
+   * Display text for an option when it differs from the wire value — deal-size
+   * bands send a terse id ("4-6") but read as "₹4–6 L". Defaults to identity,
+   * so filters whose value is already their label pass nothing.
+   */
+  optionLabel?: (v: string) => string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -826,7 +844,7 @@ function FilterChip({
       >
         {icon}
         {label}
-        {value && <span>· {value}</span>}
+        {value && <span>· {optionLabel(value)}</span>}
         <ChevronDown
           size={13}
           className={cn('opacity-60 transition-transform', isOpen && 'rotate-180')}
@@ -860,7 +878,7 @@ function FilterChip({
                 value === o ? 'bg-primary-soft font-semibold text-primary' : 'text-text hover:bg-soft',
               )}
             >
-              {o}
+              {optionLabel(o)}
             </button>
           ))}
         </div>

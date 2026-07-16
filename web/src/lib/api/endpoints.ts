@@ -41,9 +41,14 @@ export const endpoints = {
       enquiry_type?: string;
       /** Hot | Warm | Cold — server-computed from expected_close_date. */
       derived_type?: string;
+      /**
+       * Deal-size band id — server-computed from expected_value, never stored.
+       * Ids come from VALUE_BANDS in @/lib/utils/valueBand ("1-3", "50+", …).
+       */
+      value_band?: string;
       /** 1 → open deals untouched ≥3 days, stalest first. */
       stalled?: number;
-      /** 'mine' → caller's open deals closing within 7 days, soonest first. */
+      /** 'mine' → caller's open deals with a scheduled follow-up, soonest first. */
       queue?: string;
       owner?: number | string;
       /** Filters on created_at, calendar-day inclusive. ISO yyyy-mm-dd. */

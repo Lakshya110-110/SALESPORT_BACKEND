@@ -17,6 +17,7 @@ import { SetClientBudgetModal } from '@/components/enquiry/SetClientBudgetModal'
 import { SetExpectedValueModal } from '@/components/enquiry/SetExpectedValueModal';
 import { endpoints } from '@/lib/api/endpoints';
 import { fmtInr, ddmm, initials, avatarColor, timeAgo, fmtPhone } from '@/lib/utils/format';
+import { bandLabel } from '@/lib/utils/valueBand';
 import { cn } from '@/lib/utils/cn';
 import type { EnquiryDetail, EnquiryStatus, Touchpoint } from '@/lib/api/types';
 
@@ -237,11 +238,19 @@ function StatStrip({ e }: { e: EnquiryDetail }) {
     ? Number(lastWithClientFigure.client_budget) || Number(lastWithClientFigure.client_offer)
     : null;
 
-  const stats: Array<{ label: string; value: ReactNode; money?: boolean; action?: ReactNode }> = [
+  const stats: Array<{
+    label: string;
+    value: ReactNode;
+    money?: boolean;
+    action?: ReactNode;
+    hint?: string;
+  }> = [
     {
       label: 'Expected deal value',
       value: fmtInr(e.expected_value),
       money: true,
+      // Band is derived, never stored — the exact figure above stays the truth.
+      hint: bandLabel(e.expected_value),
       action: (
         <button
           type="button"
@@ -311,6 +320,11 @@ function StatStrip({ e }: { e: EnquiryDetail }) {
             >
               {s.value}
             </div>
+            {s.hint && s.hint !== '—' && (
+              <div className="truncate pt-[2px] text-[10.5px] font-semibold leading-[1.3] text-subtle">
+                {s.hint}
+              </div>
+            )}
           </div>
         ))}
       </div>

@@ -189,6 +189,23 @@ class ContactViewSet(viewsets.ModelViewSet):
 # ===========================================================================
 # Enquiries + nested flows
 # ===========================================================================
+# Deal-size bands for `?value_band=`, as (min_inclusive, max_exclusive) rupees.
+# Mirrors VALUE_BANDS in web/src/lib/utils/valueBand.ts — the frontend owns the
+# labels, this owns the filtering, and the ids are the wire contract between
+# them. Edit both together, exactly as leadType.ts / derived_type are kept in
+# step. Bands are contiguous so every amount belongs to exactly one.
+VALUE_BANDS = {
+    "lt1": (0, 100000),
+    "1-3": (100000, 400000),
+    "4-6": (400000, 700000),
+    "7-10": (700000, 1100000),
+    "11-15": (1100000, 1600000),
+    "16-25": (1600000, 2600000),
+    "26-50": (2600000, 5000000),
+    "50+": (5000000, None),
+}
+
+
 class EnquiryViewSet(viewsets.ModelViewSet):
     queryset = Enquiry.objects.select_related("company", "owner", "contact").all()
     search_fields = ["lead_id", "company__name", "phone", "email", "contact__name", "source", "industry"]
@@ -239,6 +256,23 @@ class EnquiryViewSet(viewsets.ModelViewSet):
                     Q(expected_close_date__gt=warm_edge)
                     | Q(expected_close_date__isnull=True)
                 )
+        # Deal-size band — derived from expected_value, never stored, so the
+        # column stays numeric and the dashboard can keep Sum()ing it. Filtered
+        # here (not client-side) because the list is paginated: filtering one
+        # page would silently hide matches on every other page.
+        # Bands mirror web/src/lib/utils/valueBand.ts — edit both together.
+        band = VALUE_BANDS.get(p.get("value_band"))
+        if band:
+            lo, hi = band
+            # `__gt=0` matters for the "under ₹1 L" band: expected_value
+            # defaults to 0, so without it that band would sweep in every
+            # enquiry where no figure was ever entered. bandFor() on the
+            # frontend likewise treats 0 as "no value" and renders a dash —
+            # "nothing entered" is not the same as "a small deal". A no-op for
+            # every other band, whose floor is already >= 1,00,000.
+            qs = qs.filter(expected_value__gt=0, expected_value__gte=lo)
+            if hi is not None:
+                qs = qs.filter(expected_value__lt=hi)
         # Dashboard side-panel slices — server-computed so they cover the
         # whole dataset instead of whatever page the client happened to load.
         open_statuses = ["New", "In Progress"]
