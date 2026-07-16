@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db.models import Count, Sum, Q, OuterRef, Subquery
+from django.http import Http404
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from rest_framework import viewsets, status, permissions
@@ -621,6 +622,21 @@ class ProposalViewSet(viewsets.ModelViewSet):
     # Accept multipart so `Upload Proposal` can post the PDF alongside the
     # title / amount / status fields.
     parser_classes = [JSONParser, FormParser, MultiPartParser]
+
+    def initial(self, request, *args, **kwargs):
+        """Refuse every action while the feature is hidden.
+
+        404 rather than 403: "this endpoint isn't here" is the truth we want a
+        client to act on. 403 reads as "you lack permission", which would send
+        someone hunting through roles for a switch that isn't about them.
+
+        In initial() so it covers list/retrieve/create/update/destroy at once —
+        one gate, with no way to add an action later that forgets to check.
+        The rows stay in the database; only the door is shut.
+        """
+        if not settings.PROPOSALS_ENABLED:
+            raise Http404("Proposals are not available.")
+        return super().initial(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         p = serializer.save()

@@ -39,7 +39,6 @@ const QUICK_NAV: Sugg[] = [
   { type: 'nav', path: '/dashboard', title: 'Dashboard', sub: 'Overview & KPIs' },
   { type: 'nav', path: '/enquiries', title: 'Enquiries', sub: 'All leads' },
   { type: 'nav', path: '/meetings', title: 'Meetings', sub: 'Upcoming + past' },
-  { type: 'nav', path: '/proposals', title: 'Proposals', sub: 'All proposals' },
   { type: 'nav', path: '/companies', title: 'Companies', sub: 'Customer orgs' },
   { type: 'nav', path: '/contacts', title: 'Contacts', sub: 'People' },
   { type: 'nav', path: '/master-data', title: 'Master data', sub: 'Dropdowns / tags' },

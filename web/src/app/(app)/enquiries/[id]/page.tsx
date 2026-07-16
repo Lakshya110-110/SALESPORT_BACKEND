@@ -18,6 +18,7 @@ import { SetExpectedValueModal } from '@/components/enquiry/SetExpectedValueModa
 import { endpoints } from '@/lib/api/endpoints';
 import { fmtInr, ddmm, initials, avatarColor, timeAgo, fmtPhone } from '@/lib/utils/format';
 import { bandLabel } from '@/lib/utils/valueBand';
+import { PROPOSALS_ENABLED } from '@/lib/features';
 import { cn } from '@/lib/utils/cn';
 import type { EnquiryDetail, EnquiryStatus, Touchpoint } from '@/lib/api/types';
 
@@ -155,9 +156,12 @@ function DetailBody({ e }: { e: EnquiryDetail }) {
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <UpdateStatusButton enquiryId={e.id} status={e.status as EnquiryStatus} />
-          <Button variant="secondary" size="sm" onClick={() => setPropOpen(true)}>
-            Upload Proposal
-          </Button>
+          {/* Proposals hidden pending a rework — see lib/features. */}
+          {PROPOSALS_ENABLED && (
+            <Button variant="secondary" size="sm" onClick={() => setPropOpen(true)}>
+              Upload Proposal
+            </Button>
+          )}
         </div>
       </div>
 
@@ -206,13 +210,15 @@ function DetailBody({ e }: { e: EnquiryDetail }) {
         enquiry={e}
       />
       <LogTouchpointModal open={tpOpen} onClose={() => setTpOpen(false)} enquiryId={e.id} />
-      <UploadProposalModal
-        open={propOpen}
-        onClose={() => setPropOpen(false)}
-        enquiryId={e.id}
-        suggestedTitle={`Proposal — ${e.company_name}`}
-        suggestedAmount={Number(e.expected_value) || undefined}
-      />
+      {PROPOSALS_ENABLED && (
+        <UploadProposalModal
+          open={propOpen}
+          onClose={() => setPropOpen(false)}
+          enquiryId={e.id}
+          suggestedTitle={`Proposal — ${e.company_name}`}
+          suggestedAmount={Number(e.expected_value) || undefined}
+        />
+      )}
     </>
   );
 }

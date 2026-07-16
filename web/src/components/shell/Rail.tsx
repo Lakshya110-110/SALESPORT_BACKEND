@@ -1,4 +1,5 @@
 'use client';
+import { PROPOSALS_ENABLED } from '@/lib/features';
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -41,7 +42,10 @@ const NAV: Group[] = [
     items: [
       { href: '/enquiries', label: 'Enquiries', icon: Users },
       { href: '/meetings', label: 'Meetings', icon: Calendar },
-      { href: '/proposals', label: 'Proposals', icon: FileText },
+      // Proposals is hidden pending a rework — see lib/features.
+      ...(PROPOSALS_ENABLED
+        ? [{ href: '/proposals', label: 'Proposals', icon: FileText }]
+        : []),
     ],
   },
   {

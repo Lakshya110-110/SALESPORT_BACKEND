@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework import serializers
 from .models import (
     User, Company, Contact, Enquiry, Touchpoint, NegotiationRound,
@@ -238,8 +239,23 @@ class EnquiryDetailSerializer(IndianMobileMixin, serializers.ModelSerializer):
     derived_type = serializers.ReadOnlyField()
     touchpoints = TouchpointSerializer(many=True, read_only=True)
     negotiation_rounds = NegotiationRoundSerializer(many=True, read_only=True)
-    proposals = ProposalSerializer(many=True, read_only=True)
+    proposals = serializers.SerializerMethodField()
     meetings = MeetingSerializer(many=True, read_only=True)
+
+    def get_proposals(self, obj):
+        """Empty while proposals are hidden — but the KEY STAYS.
+
+        Dropping the field would be the cleaner-looking move and the more
+        dangerous one: a client parsing this into a non-nullable list (the
+        Android app's Kotlin models) would fail to deserialise the whole
+        enquiry and take the deal screen down with it. An empty array is
+        understood by every client that already handles "no proposals yet".
+
+        The rows are still in the database; this only stops serving them.
+        """
+        if not settings.PROPOSALS_ENABLED:
+            return []
+        return ProposalSerializer(obj.proposals.all(), many=True).data
 
     class Meta:
         model = Enquiry

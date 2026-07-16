@@ -1,5 +1,6 @@
 'use client';
 
+import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +11,7 @@ import { Modal } from '@/components/ui/Modal';
 import { MiniKpi, MiniKpiStrip } from '@/components/ui/MiniKpi';
 import { CheckCircle2, Eye, Send, Clock as ClockIcon } from 'lucide-react';
 import { endpoints } from '@/lib/api/endpoints';
+import { PROPOSALS_ENABLED } from '@/lib/features';
 import { fmtInr, ddmm } from '@/lib/utils/format';
 import { validatePdfFile } from '@/lib/utils/file';
 import { cn } from '@/lib/utils/cn';
@@ -34,6 +36,15 @@ const PROPOSAL_SORT = {
  * with real S3 upload; today it stores metadata + a client-side data URL).
  */
 export default function ProposalsPage() {
+  // Hidden pending a rework. The nav item is gone, but the route still exists —
+  // a bookmark, browser history, or the muscle-memory G-then-P would otherwise
+  // land here and fire a request the backend now refuses. Send them somewhere
+  // real instead of rendering a page built on a 404.
+  //
+  // Before the hooks below, so nothing fetches on the way out. Restore by
+  // flipping PROPOSALS_ENABLED in lib/features (and the backend's own switch).
+  if (!PROPOSALS_ENABLED) redirect('/dashboard');
+
   const [uploadOpen, setUploadOpen] = useState(false);
   const [search, setSearch] = useState('');
   const q = useQuery({

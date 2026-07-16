@@ -309,6 +309,17 @@ else:
 #     is actually implemented in crm/otp_delivery.py — TODO, not built yet.
 # ---------------------------------------------------------------------------
 OTP_TTL_SECONDS = int(env("OTP_TTL_SECONDS", "300"))
+
+# --- Feature flags ---------------------------------------------------------
+# Proposals are hidden pending a rework. Off, /api/proposals/ returns 404 and
+# the `proposals` array on an enquiry comes back empty.
+#
+# HIDDEN, NOT DELETED: the model, the migrations and the 36 existing rows —
+# including uploaded PDFs — are untouched. Flipping this back on (or setting
+# PROPOSALS_ENABLED=True in the environment) restores the endpoint and the
+# data with it. The web console has a matching flag in web/src/lib/features.ts;
+# both must agree.
+PROPOSALS_ENABLED = env_bool("PROPOSALS_ENABLED", False)
 OTP_RETURN_IN_RESPONSE = env_bool("OTP_RETURN_IN_RESPONSE", DEBUG)
 OTP_TEST_PHONE_NUMBERS = env_list("OTP_TEST_PHONE_NUMBERS")
 OTP_PROVIDER = env("OTP_PROVIDER", "")
