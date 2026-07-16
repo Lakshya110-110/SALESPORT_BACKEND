@@ -8,6 +8,7 @@ import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { endpoints } from '@/lib/api/endpoints';
+import { phoneError } from '@/lib/utils/phone';
 import { cn } from '@/lib/utils/cn';
 import { fmtPhone } from '@/lib/utils/format';
 import { downloadCsv } from '@/lib/utils/csv';
@@ -223,7 +224,7 @@ function NewContactModal({ open, onClose }: { open: boolean; onClose: () => void
             type="submit"
             form="new-contact-form"
             loading={submit.isPending}
-            disabled={!name.trim() || !companyId}
+            disabled={!name.trim() || !companyId || phoneError(phone) !== null}
           >
             Save
           </Button>
@@ -268,7 +269,11 @@ function NewContactModal({ open, onClose }: { open: boolean; onClose: () => void
             <input value={designation} onChange={(e) => setDesignation(e.target.value)} className={inputCls} />
           </Field>
           <Field label="Phone">
+            {/* Optional here — blank is fine, wrong is not. */}
             <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} />
+            {phoneError(phone) && (
+              <span className="mt-1 block text-[11px] text-danger">{phoneError(phone)}</span>
+            )}
           </Field>
           <Field label="Email">
             <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputCls} />

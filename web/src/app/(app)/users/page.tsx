@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Switch } from '@/components/ui/Switch';
 import { endpoints } from '@/lib/api/endpoints';
+import { isValidIndianMobile, phoneError } from '@/lib/utils/phone';
 import { session } from '@/lib/auth/session';
 import { avatarColor, initials, fmtPhone } from '@/lib/utils/format';
 import { cn } from '@/lib/utils/cn';
@@ -326,7 +327,7 @@ function NewUserModal({ open, onClose }: { open: boolean; onClose: () => void })
             type="submit"
             form="new-user-form"
             loading={submit.isPending}
-            disabled={!name.trim() || !phone.trim()}
+            disabled={!name.trim() || !isValidIndianMobile(phone)}
           >
             Add
           </Button>
@@ -343,6 +344,9 @@ function NewUserModal({ open, onClose }: { open: boolean; onClose: () => void })
         </Field>
         <Field label="Phone" required>
           <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="9876500006" className={inputCls} />
+          {phoneError(phone) && (
+            <span className="mt-1 block text-[11px] text-danger">{phoneError(phone)}</span>
+          )}
         </Field>
         <Field label="Email">
           <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputCls} />
@@ -402,7 +406,7 @@ function EditUserModal({ user, open, onClose }: { user: User; open: boolean; onC
             type="submit"
             form="edit-user-form"
             loading={submit.isPending}
-            disabled={!name.trim() || !phone.trim()}
+            disabled={!name.trim() || !isValidIndianMobile(phone)}
           >
             Save
           </Button>
@@ -419,6 +423,12 @@ function EditUserModal({ user, open, onClose }: { user: User; open: boolean; onC
         </Field>
         <Field label="Phone" required>
           <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} />
+          {/* Two accounts predate this rule and carry numbers starting 0-5.
+              They sign in fine, but editing one now forces the number to be
+              corrected before anything else can be saved. */}
+          {phoneError(phone) && (
+            <span className="mt-1 block text-[11px] text-danger">{phoneError(phone)}</span>
+          )}
         </Field>
         <Field label="Email">
           <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" className={inputCls} />

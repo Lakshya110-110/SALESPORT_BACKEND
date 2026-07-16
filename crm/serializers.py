@@ -3,9 +3,36 @@ from .models import (
     User, Company, Contact, Enquiry, Touchpoint, NegotiationRound,
     Meeting, Proposal, Notification, MasterData, FollowUp,
 )
+from .phone import is_valid_indian_mobile, PHONE_ERROR
 
 
-class UserSerializer(serializers.ModelSerializer):
+class IndianMobileMixin:
+    """Rejects anything that isn't a real Indian mobile number (10 digits,
+    starting 6-9).
+
+    Lives on the serializer, not the form, so the rule holds for every client —
+    the Next.js console and the mobile app both go through here, and neither can
+    write a junk number by skipping a UI check.
+
+    Only enforced on WRITE. Rows predating this rule (a handful of contacts and
+    two user accounts carry numbers starting 0-5) still read back fine; they are
+    only rejected if someone edits that record and leaves the number invalid.
+    Login deliberately does NOT use this — those two accounts would be locked
+    out of a system they can currently sign into.
+
+    Blank stays allowed where the model allows it: "no number" is not "a wrong
+    number". Required-ness is the field's job, not this rule's.
+    """
+
+    def validate_phone(self, value):
+        if not value or not str(value).strip():
+            return value
+        if not is_valid_indian_mobile(value):
+            raise serializers.ValidationError(PHONE_ERROR)
+        return value
+
+
+class UserSerializer(IndianMobileMixin, serializers.ModelSerializer):
     initials = serializers.ReadOnlyField()
 
     class Meta:
@@ -20,7 +47,7 @@ class MasterDataSerializer(serializers.ModelSerializer):
         fields = ["id", "category", "value", "label", "order", "is_active"]
 
 
-class ContactSerializer(serializers.ModelSerializer):
+class ContactSerializer(IndianMobileMixin, serializers.ModelSerializer):
     company_name = serializers.CharField(source="company.name", read_only=True)
 
     class Meta:
@@ -29,7 +56,7 @@ class ContactSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at"]
 
 
-class CompanySerializer(serializers.ModelSerializer):
+class CompanySerializer(IndianMobileMixin, serializers.ModelSerializer):
     contact_count = serializers.IntegerField(source="contacts.count", read_only=True)
 
     class Meta:
@@ -197,7 +224,7 @@ class EnquiryListSerializer(serializers.ModelSerializer):
                   "lost_reason", "last_touch_at", "next_followup_at", "created_at", "updated_at"]
 
 
-class EnquiryDetailSerializer(serializers.ModelSerializer):
+class EnquiryDetailSerializer(IndianMobileMixin, serializers.ModelSerializer):
     company_name = serializers.CharField(source="company.name", read_only=True)
     contact_name = serializers.CharField(source="contact.name", read_only=True)
     owner_name = serializers.CharField(source="owner.name", read_only=True)

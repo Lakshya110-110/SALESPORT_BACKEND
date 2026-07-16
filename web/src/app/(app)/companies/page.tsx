@@ -9,6 +9,7 @@ import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { endpoints } from '@/lib/api/endpoints';
+import { phoneError } from '@/lib/utils/phone';
 import { cn } from '@/lib/utils/cn';
 import { fmtPhone } from '@/lib/utils/format';
 import { downloadCsv } from '@/lib/utils/csv';
@@ -257,7 +258,7 @@ function NewCompanyModal({ open, onClose }: { open: boolean; onClose: () => void
             type="submit"
             form="new-co-form"
             loading={submit.isPending}
-            disabled={!name.trim()}
+            disabled={!name.trim() || phoneError(phone) !== null}
           >
             Save
           </Button>
@@ -286,6 +287,9 @@ function NewCompanyModal({ open, onClose }: { open: boolean; onClose: () => void
           </Field>
           <Field label="Phone">
             <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} placeholder="9876543210" />
+            {phoneError(phone) && (
+              <span className="mt-1 block text-[11px] text-danger">{phoneError(phone)}</span>
+            )}
           </Field>
           <Field label="City">
             <input value={city} onChange={(e) => setCity(e.target.value)} className={inputCls} placeholder="Lucknow" />

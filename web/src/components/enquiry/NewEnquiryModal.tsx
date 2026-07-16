@@ -10,6 +10,7 @@ import { DateField } from '@/components/ui/DateField';
 import { endpoints } from '@/lib/api/endpoints';
 import { cn } from '@/lib/utils/cn';
 import { ddmmToISO } from '@/lib/utils/date';
+import { isValidIndianMobile, phoneError } from '@/lib/utils/phone';
 import { VALUE_BANDS, bandById } from '@/lib/utils/valueBand';
 import { useMasterDataValues } from '@/lib/hooks/useMasterData';
 import type { Company, EnquiryDetail } from '@/lib/api/types';
@@ -75,9 +76,11 @@ export function NewEnquiryModal({
 
   // `f.phone` always renders as "+91 …" (see formatPhone) even with zero
   // digits typed, so `f.phone.trim()` is always truthy and can't gate
-  // submission on its own — count the actual subscriber digits instead.
-  const phoneDigits = (f.phone.startsWith('+91') ? f.phone.slice(3) : f.phone).replace(/\D/g, '');
-  const phoneValid = phoneDigits.length === 10;
+  // submission on its own — validate the actual subscriber digits instead.
+  // Must be a real Indian mobile (10 digits, starting 6-9), not merely 10
+  // digits long; the backend rejects the rest anyway.
+  const phoneValid = isValidIndianMobile(f.phone);
+  const phoneErr = phoneError(f.phone);
 
   // Email was gated on "not empty" alone, so "abc" reached the API. Require a
   // local part, an @, and a dotted domain — deliberately permissive about the
@@ -227,10 +230,8 @@ export function NewEnquiryModal({
               placeholder="98765 43210"
               className={inputCls}
             />
-            {phoneDigits.length > 0 && !phoneValid && (
-              <span className="mt-1 block text-[11px] text-danger">
-                Enter a full 10-digit mobile number.
-              </span>
+            {phoneErr && (
+              <span className="mt-1 block text-[11px] text-danger">{phoneErr}</span>
             )}
           </Field>
           <Field label="Email" required>
