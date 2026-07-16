@@ -4,7 +4,8 @@ import Link from 'next/link';
 import { useMemo } from 'react';
 import { AlertTriangle, Phone, Calendar, FileText, Factory } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { fmtInr, fmtInrShort, initials, avatarColor, ddmm, timeAgo } from '@/lib/utils/format';
+import { fmtInrShort, initials, avatarColor, ddmm, timeAgo } from '@/lib/utils/format';
+import { bandLabel } from '@/lib/utils/valueBand';
 import { todayLocalISO } from '@/lib/utils/date';
 import type { Dashboard, EnquiryListItem } from '@/lib/api/types';
 
@@ -128,7 +129,9 @@ export function StalledDeals({ enquiries }: { enquiries: EnquiryListItem[] }) {
                       </span>
                     )}
                   </Td>
-                  <Td className="whitespace-nowrap text-right font-mono">{fmtInr(e.expected_value)}</Td>
+                  {/* The band, not the stored figure — that figure is the
+                      midpoint of the band picked at entry, not a quoted price. */}
+                  <Td className="whitespace-nowrap text-right">{bandLabel(e.expected_value)}</Td>
                 </tr>
                 );
               })}
@@ -259,7 +262,7 @@ export function RecentActivity({ enquiries }: { enquiries: EnquiryListItem[] }) 
                     {e.owner_name ?? 'Someone'} · {e.status} — {e.company_name}
                   </div>
                   <div className="truncate text-[11.5px] text-subtle">
-                    {fmtInr(e.expected_value)}
+                    {bandLabel(e.expected_value)}
                   </div>
                 </div>
                 <div className="whitespace-nowrap text-[11px] text-subtle">

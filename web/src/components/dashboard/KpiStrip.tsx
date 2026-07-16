@@ -46,7 +46,9 @@ export function KpiStrip({ data }: { data: Dashboard }) {
     {
       label: 'Forecast (weighted)',
       value: fmtInrShort(forecast),
-      sub: '60% of pipeline',
+      // 60% of a figure that is itself banded — say so, rather than let a
+      // twice-estimated number read as a projection anyone can bank on.
+      sub: '60% of est. pipeline',
       subTone: 'neutral',
       icon: TrendingUp,
     },
@@ -58,14 +60,19 @@ export function KpiStrip({ data }: { data: Dashboard }) {
       icon: Users,
     },
     {
-      label: 'Pipeline Value',
+      // "(est.)" is load-bearing: deal value is picked as a band and stored as
+      // that band's midpoint, so this is a sum of midpoints, not of quoted
+      // figures. Wider bands above ₹15 L make the top end rougher still.
+      label: 'Pipeline Value (est.)',
       value: fmtInrShort(pipelineValue),
       sub: `${data.upcoming_meetings ?? 0} meetings coming`,
       subTone: 'neutral',
       icon: Wallet,
     },
     {
-      label: 'Won This Period',
+      // Same reason — a won deal's value is still the band midpoint picked at
+      // entry, not the price it actually closed at.
+      label: 'Won This Period (est.)',
       value: fmtInrShort(wonValue),
       sub: `${won} deals`,
       subTone: 'up',
