@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Plus, Calendar as CalendarIcon, CalendarDays, Video, Phone as PhoneIcon, MapPin,
   Clock, Download, CheckCircle2, XCircle, Users as UsersIcon,
-  Search as SearchIcon, ChevronDown, Filter,
+  Search as SearchIcon, ChevronDown, Filter, Briefcase, Sparkles,
 } from 'lucide-react';
 import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
@@ -20,8 +20,9 @@ import { endpoints } from '@/lib/api/endpoints';
 import { ddmm, initials, avatarColor } from '@/lib/utils/format';
 import { isValidDDMM } from '@/lib/utils/date';
 import { useMasterDataValues } from '@/lib/hooks/useMasterData';
+import { isValidIndianMobile, phoneError } from '@/lib/utils/phone';
 import { cn } from '@/lib/utils/cn';
-import type { Meeting, Company, User as UserT } from '@/lib/api/types';
+import type { Meeting, Company, User as UserT, EnquiryListItem } from '@/lib/api/types';
 
 /**
  * Meetings — /meetings.
@@ -298,12 +299,33 @@ function MeetingRow({
 
 // -------------------- schedule meeting --------------------
 
+/**
+ * Where a meeting comes from. Picked first, because it changes what the form
+ * has to ask for — and because until now this modal only ever searched
+ * COMPANIES and never sent `enquiry`, so a meeting scheduled here never
+ * reached the lead's timeline.
+ *
+ *   lead      — against an existing enquiry. Company comes from the enquiry.
+ *   potential — a prospect with no enquiry yet. Meeting saves with
+ *               enquiry: null (the model has always allowed that) and the
+ *               company is found-or-created so they exist in the Directory.
+ */
+type MeetingSource = 'lead' | 'potential';
+
 function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const qc = useQueryClient();
   const modes = useMasterDataValues('mode', MODE_FALLBACK);
+  // null = the chooser is showing; set = we're on that source's form.
+  const [source, setSource] = useState<MeetingSource | null>(null);
   const [companyId, setCompanyId] = useState<number | null>(null);
   const [companyQuery, setCompanyQuery] = useState('');
   const [enquiryLabel, setEnquiryLabel] = useState('');
+  // 'lead' path
+  const [enquiryId, setEnquiryId] = useState<number | null>(null);
+  const [enquiryQuery, setEnquiryQuery] = useState('');
+  // 'potential' path
+  const [prospectContact, setProspectContact] = useState('');
+  const [prospectPhone, setProspectPhone] = useState('');
   const [purpose, setPurpose] = useState('Product demo');
   const [mode, setMode] = useState<Meeting['mode']>('In-person');
   const [dateStr, setDateStr] = useState('');
@@ -326,6 +348,13 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
     queryFn: () => endpoints.companies.list({ search: companyQuery, page_size: 6 }),
     enabled: open && companyQuery.trim().length >= 2,
   });
+  // Searches ENQUIRIES (lead id / company / contact / phone), so the meeting
+  // can be attached to the lead itself rather than just its company.
+  const enquiriesQ = useQuery({
+    queryKey: ['enquiries', 'search-meeting', enquiryQuery],
+    queryFn: () => endpoints.enquiries.list({ search: enquiryQuery, page_size: 6 }),
+    enabled: open && source === 'lead' && enquiryQuery.trim().length >= 2,
+  });
   const usersQ = useQuery({
     queryKey: ['users', 'list-meeting'],
     queryFn: () => endpoints.users.list({ page_size: 100 }),
@@ -347,10 +376,49 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
   }, [consultantName, enquiryLabel, companyQuery]);
 
   const submit = useMutation({
-    mutationFn: () => {
-      if (!companyId) throw new Error('Pick a company / enquiry.');
+    mutationFn: async () => {
       const iso = combineDateTime(dateStr, timeStr);
       if (!iso) throw new Error('Enter a valid date + time.');
+
+      // Resolve which company this meeting belongs to, and whether it hangs
+      // off an enquiry. `company` is required by the model; `enquiry` is
+      // nullable and is exactly what separates the two paths.
+      let resolvedCompanyId = companyId;
+      if (source === 'potential') {
+        // Find-or-create by exact name, the same contract New Enquiry uses —
+        // so scheduling with a brand-new prospect doesn't demand someone go
+        // and add them to the Directory first.
+        const name = companyQuery.trim();
+        if (!name) throw new Error('Enter the company name.');
+        const found = await endpoints.companies.list({ search: name, page_size: 20 });
+        const exact = (found.results ?? []).find(
+          (c: Company) => c.name.toLowerCase() === name.toLowerCase(),
+        );
+        if (exact) {
+          resolvedCompanyId = exact.id;
+        } else {
+          const created = await endpoints.companies.create({
+            name,
+            phone: prospectPhone.replace(/\D/g, '').slice(-10),
+          } as never);
+          resolvedCompanyId = created.id;
+        }
+        // The person we're actually meeting. Best-effort: a contact that
+        // fails to save must not cost us the meeting itself.
+        if (prospectContact.trim() && resolvedCompanyId) {
+          try {
+            await endpoints.contacts.create({
+              company: resolvedCompanyId,
+              name: prospectContact.trim(),
+              phone: prospectPhone.replace(/\D/g, '').slice(-10),
+              is_primary: true,
+            } as never);
+          } catch {
+            // Swallowed on purpose — see above.
+          }
+        }
+      }
+      if (!resolvedCompanyId) throw new Error(source === 'lead' ? 'Pick a lead.' : 'Enter the company name.');
       // `message` stays a free-form summary of the things with no dedicated
       // field (agenda/attendees/duration/reminder). Email/WhatsApp content
       // now has its own real fields below, actually persisted server-side.
@@ -359,7 +427,10 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
       if (attendees.trim()) messageParts.push('Attendees: ' + attendees.trim());
       messageParts.push(`Duration: ${duration} min · Reminder: ${reminder === '0' ? 'None' : reminder + ' min'}`);
       return endpoints.meetings.create({
-        company: companyId,
+        company: resolvedCompanyId,
+        // The point of the whole split: a lead meeting lands on that lead's
+        // timeline, a potential-lead meeting has nothing to land on yet.
+        enquiry: source === 'lead' ? enquiryId : null,
         purpose: purpose.trim() || 'Meeting',
         mode,
         scheduled_at: iso,
@@ -383,6 +454,9 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
   });
 
   const reset = () => {
+    setSource(null);
+    setEnquiryId(null); setEnquiryQuery('');
+    setProspectContact(''); setProspectPhone('');
     setCompanyId(null); setCompanyQuery(''); setEnquiryLabel('');
     setPurpose('Product demo'); setMode('In-person');
     setDateStr(''); setTimeStr('10:00'); setDuration('60'); setReminder('60');
@@ -398,54 +472,135 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
     <Modal
       open={open}
       onClose={() => { reset(); onClose(); }}
-      title="Schedule meeting"
+      title={
+        source === null ? 'Schedule meeting'
+          : source === 'lead' ? 'Schedule meeting — from a lead'
+          : 'Schedule meeting — potential lead'
+      }
       size="lg"
       footer={
-        <>
+        // The chooser has nothing to submit yet, so it gets no submit button —
+        // an always-disabled "Schedule" while picking would just look broken.
+        source === null ? (
           <Button type="button" variant="secondary" onClick={() => { reset(); onClose(); }}>Cancel</Button>
-          <Button
-            type="submit"
-            form="meeting-form"
-            loading={submit.isPending}
-            disabled={!companyId || !dateStr || !timeStr}
-          >
-            Schedule &amp; send invite
-          </Button>
-        </>
+        ) : (
+          <>
+            <Button type="button" variant="ghost" onClick={() => setSource(null)}>Back</Button>
+            <Button type="button" variant="secondary" onClick={() => { reset(); onClose(); }}>Cancel</Button>
+            <Button
+              type="submit"
+              form="meeting-form"
+              loading={submit.isPending}
+              disabled={
+                !dateStr || !timeStr
+                || (source === 'lead'
+                  ? !enquiryId
+                  : !companyQuery.trim() || !prospectContact.trim() || !isValidIndianMobile(prospectPhone))
+              }
+            >
+              Schedule &amp; send invite
+            </Button>
+          </>
+        )
       }
     >
+      {source === null ? (
+        <div className="space-y-3">
+          <p className="text-[12.5px] text-muted">
+            Who is this meeting with?
+          </p>
+          <SourceChoice
+            icon={<Briefcase size={18} strokeWidth={1.9} />}
+            title="From an existing lead"
+            desc="Pick the enquiry. The meeting joins that lead's timeline, and the company is filled in from it."
+            onClick={() => setSource('lead')}
+          />
+          <SourceChoice
+            icon={<Sparkles size={18} strokeWidth={1.9} />}
+            title="Potential lead"
+            desc="Someone with no enquiry yet. Capture who they are — we'll add the company to your Directory so you can raise a lead later."
+            onClick={() => setSource('potential')}
+          />
+        </div>
+      ) : (
       <form
         id="meeting-form"
         onSubmit={(e: FormEvent<HTMLFormElement>) => { e.preventDefault(); submit.mutate(); }}
         className="space-y-4"
       >
-        <Field label="Company / Enquiry" required>
-          <div className="relative">
-            <input
-              className={inputCls}
-              placeholder="Type to search…"
-              value={companyQuery}
-              onChange={(e) => { setCompanyQuery(e.target.value); setCompanyId(null); }}
-            />
-            {companyQuery.length >= 2 && (companiesQ.data?.results ?? []).length > 0 && !companyId && (
-              <ul className="absolute left-0 right-0 top-[calc(100%+4px)] z-30 max-h-56 overflow-y-auto rounded-lg border border-b-subtle bg-surface shadow-pop">
-                {(companiesQ.data?.results ?? []).map((c: Company) => (
-                  <li key={c.id}>
-                    <button
-                      type="button"
-                      onClick={() => { setCompanyId(c.id); setCompanyQuery(c.name); setEnquiryLabel(c.name); }}
-                      className="flex w-full items-center justify-between px-3 py-2 text-left text-[12.5px] hover:bg-soft"
-                    >
-                      <span className="truncate text-text">{c.name}</span>
-                      <span className="text-[11px] text-subtle">{c.industry}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
+        {source === 'lead' ? (
+          <Field label="Lead" required>
+            <div className="relative">
+              <input
+                className={inputCls}
+                placeholder="Search lead ID, company or contact…"
+                value={enquiryQuery}
+                onChange={(e) => { setEnquiryQuery(e.target.value); setEnquiryId(null); setCompanyId(null); }}
+              />
+              {enquiryQuery.length >= 2 && (enquiriesQ.data?.results ?? []).length > 0 && !enquiryId && (
+                <ul className="absolute left-0 right-0 top-[calc(100%+4px)] z-30 max-h-56 overflow-y-auto rounded-lg border border-b-subtle bg-surface shadow-pop">
+                  {(enquiriesQ.data?.results ?? []).map((en: EnquiryListItem) => (
+                    <li key={en.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEnquiryId(en.id);
+                          setCompanyId(en.company);
+                          setEnquiryQuery(`${en.lead_id} · ${en.company_name}`);
+                          setEnquiryLabel(en.company_name);
+                        }}
+                        className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-[12.5px] hover:bg-soft"
+                      >
+                        <span className="min-w-0 truncate text-text">{en.company_name}</span>
+                        <span className="shrink-0 font-mono tabular-nums text-[11px] text-subtle">{en.lead_id}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            {enquiryId && (
+              <span className="mt-1 block text-[11px] text-subtle">
+                Company taken from the lead. This meeting will show on its timeline.
+              </span>
             )}
-          </div>
-        </Field>
-
+          </Field>
+        ) : (
+          <>
+            <Field label="Company" required>
+              <input
+                className={inputCls}
+                placeholder="Company name"
+                value={companyQuery}
+                onChange={(e) => setCompanyQuery(e.target.value)}
+              />
+              <span className="mt-1 block text-[11px] text-subtle">
+                Added to your Directory if they're new.
+              </span>
+            </Field>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Field label="Contact person" required>
+                <input
+                  className={inputCls}
+                  placeholder="Full name"
+                  value={prospectContact}
+                  onChange={(e) => setProspectContact(e.target.value)}
+                />
+              </Field>
+              <Field label="Phone" required>
+                <input
+                  className={inputCls}
+                  placeholder="98765 43210"
+                  value={prospectPhone}
+                  onChange={(e) => setProspectPhone(e.target.value)}
+                />
+                {phoneError(prospectPhone) && (
+                  <span className="mt-1 block text-[11px] text-danger">{phoneError(prospectPhone)}</span>
+                )}
+              </Field>
+            </div>
+          </>
+        )}
         <Field label="Purpose" required>
           <input
             className={inputCls}
@@ -579,7 +734,39 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
           </div>
         )}
       </form>
+      )}
     </Modal>
+  );
+}
+
+/** One choice on the "who is this meeting with?" step. */
+function SourceChoice({
+  icon, title, desc, onClick,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'flex w-full items-start gap-3 rounded-lg border border-b-default bg-surface p-4 text-left',
+        'transition-[transform,box-shadow,border-color] duration-fast',
+        'hover:-translate-y-[1px] hover:border-primary/50 hover:shadow-pop',
+        'focus:outline-none focus-visible:border-primary',
+      )}
+    >
+      <span className="mt-[1px] flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
+        {icon}
+      </span>
+      <span className="min-w-0">
+        <span className="block font-display text-[13.5px] font-semibold text-text">{title}</span>
+        <span className="mt-0.5 block text-[11.5px] leading-[1.5] text-subtle">{desc}</span>
+      </span>
+    </button>
   );
 }
 
