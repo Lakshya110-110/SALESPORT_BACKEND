@@ -52,6 +52,15 @@ export type Dashboard = {
   won_count: number;
   won_value: number;
   pipeline_value: number;
+  /**
+   * Won / (Won + Lost) over all time, role-scoped — the real historical win
+   * rate, which drives the Forecast KPI. `null` when nothing has resolved yet:
+   * "no evidence" is not "we never win", so render a dash, not a 0.
+   */
+  win_rate: number | null;
+  /** The sample `win_rate` was computed from — show it, don't just trust it. */
+  won_resolved: number;
+  resolved_count: number;
   by_stage: Array<{ status: string; count: number }>;
   upcoming_meetings: number;
   /** Admin-only. */

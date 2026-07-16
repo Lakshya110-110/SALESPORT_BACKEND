@@ -33,9 +33,16 @@ export function KpiStrip({ data }: { data: Dashboard }) {
   const wonValue = Number(data.won_value || 0);
   const pipelineValue = Number(data.pipeline_value || 0);
   const conversion = total > 0 ? Math.round((won / total) * 100) : 0;
-  // Weighted forecast: pipeline × 60% (a defensible v1 heuristic until the
-  // backend serves a per-stage probability table)
-  const forecast = pipelineValue * 0.6;
+
+  // Forecast = open pipeline × the team's REAL win rate, served by the backend
+  // as Won / (Won + Lost) over all time. It used to be a hardcoded × 0.60 with
+  // no basis in the data — a number that looked like analysis and wasn't.
+  //
+  // `win_rate` is null until something has actually resolved. Don't fall back
+  // to a default: a made-up multiplier is exactly what this replaced, and a
+  // forecast built from zero closed deals should say so, not print a figure.
+  const winRate = data.win_rate;
+  const forecast = winRate === null || winRate === undefined ? null : pipelineValue * winRate;
   // Overdue = admin-only unassigned proxy until the backend tracks
   // overdue follow-ups explicitly
   const overdue = data.unassigned ?? 0;
@@ -44,11 +51,14 @@ export function KpiStrip({ data }: { data: Dashboard }) {
 
   const cards: KpiCard[] = [
     {
-      label: 'Forecast (weighted)',
-      value: fmtInrShort(forecast),
-      // 60% of a figure that is itself banded — say so, rather than let a
-      // twice-estimated number read as a projection anyone can bank on.
-      sub: '60% of est. pipeline',
+      label: 'Forecast (est.)',
+      value: forecast === null ? '—' : fmtInrShort(forecast),
+      // Show the rate AND the sample it came from: "74% win rate · 17/23" is an
+      // honest claim, "74%" alone hides that it rests on 23 deals. The pipeline
+      // it multiplies is itself a sum of band midpoints, hence "est.".
+      sub: forecast === null
+        ? 'no closed deals yet'
+        : `${Math.round((winRate as number) * 100)}% win rate · ${data.won_resolved}/${data.resolved_count} closed`,
       subTone: 'neutral',
       icon: TrendingUp,
     },
@@ -80,9 +90,13 @@ export function KpiStrip({ data }: { data: Dashboard }) {
       iconTone: 'success',
     },
     {
+      // Won over EVERY enquiry, open ones included — a funnel number, not a
+      // win rate, and it sits next to a Forecast quoting a much higher "win
+      // rate". Spelling out the still-open count stops the two reading as a
+      // contradiction: they answer different questions.
       label: 'Conversion',
       value: conversion + '%',
-      sub: `${won} won of ${total}`,
+      sub: `${won} won of ${total} · ${data.open_enquiries || 0} still open`,
       subTone: conversion >= 30 ? 'up' : 'neutral',
       icon: Percent,
     },

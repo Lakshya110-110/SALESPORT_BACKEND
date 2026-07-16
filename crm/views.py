@@ -681,12 +681,38 @@ def dashboard(request):
     won = created_qs.filter(status="Won")
     pipeline_value = created_qs.filter(status__in=open_statuses).aggregate(v=Sum("expected_value"))["v"] or 0
 
+    # Win rate — drives the Forecast KPI, which used to be a hardcoded
+    # "pipeline x 60%" with no basis in the data.
+    #
+    # Denominator is RESOLVED deals only (Won + Lost). Won/total would count
+    # every still-open deal as a failure, which is what made the Conversion
+    # tile read 24% while the team actually closes ~74% of what it resolves.
+    # Spam is excluded on purpose: it was never a real enquiry, so counting it
+    # as a loss would understate the rate.
+    #
+    # Deliberately NOT period-scoped (uses `qs`, not `created_qs`): a win rate
+    # is a property of the team's history, and slicing it to "Today" would
+    # compute it from a handful of deals — or none — and swing the forecast
+    # wildly. It stays role-scoped, so a consultant still sees their own rate.
+    won_resolved = qs.filter(status="Won").count()
+    lost_resolved = qs.filter(status="Lost").count()
+    resolved_count = won_resolved + lost_resolved
+    # None, not 0.0, when nothing has resolved yet: "no evidence" is not "we
+    # never win". The client renders a dash rather than a fabricated ₹0.
+    win_rate = (won_resolved / resolved_count) if resolved_count else None
+
     data = {
         "total_enquiries": created_qs.count(),
         "open_enquiries": created_qs.filter(status__in=open_statuses).count(),
         "won_count": won.count(),
         "won_value": won.aggregate(v=Sum("expected_value"))["v"] or 0,
         "pipeline_value": pipeline_value,
+        # Forecast inputs. won_resolved/resolved_count ship alongside the rate
+        # so the UI can show the sample it came from — 74% off 23 deals is a
+        # very different claim from 74% off 2,300.
+        "win_rate": win_rate,
+        "won_resolved": won_resolved,
+        "resolved_count": resolved_count,
         "by_stage": by_stage,
         "upcoming_meetings": Meeting.objects.filter(
             scheduled_at__gte=timezone.now(),
