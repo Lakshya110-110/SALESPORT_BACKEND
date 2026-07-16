@@ -109,7 +109,7 @@ export default function DashboardPage() {
     <>
       <SectionHeader
         title={`Good morning, ${first}`}
-        subtitle="Your team's pipeline at a glance."
+        subtitle="Your pipeline at a glance."
         actions={
           <Button leftIcon={<Plus size={15} />} onClick={() => modals.open('newEnquiry')}>
             New Enquiry

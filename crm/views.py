@@ -46,7 +46,7 @@ def request_otp(request):
         user = User.objects.get(phone=phone)
     except User.DoesNotExist:
         return Response(
-            {"detail": "This number isn't registered. Ask an administrator to add you to the team."},
+            {"detail": "This number isn't registered. Ask an administrator to add you."},
             status=status.HTTP_404_NOT_FOUND,
         )
     if not user.is_active:
@@ -83,7 +83,7 @@ def verify_otp(request):
         user = User.objects.get(phone=phone)
     except User.DoesNotExist:
         return Response(
-            {"detail": "This number isn't registered. Ask an administrator to add you to the team."},
+            {"detail": "This number isn't registered. Ask an administrator to add you."},
             status=status.HTTP_404_NOT_FOUND,
         )
     # A deactivated account (Active toggle off) must not be able to sign in.

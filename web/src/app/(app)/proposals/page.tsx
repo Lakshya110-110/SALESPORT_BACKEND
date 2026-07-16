@@ -57,7 +57,7 @@ export default function ProposalsPage() {
     <>
       <SectionHeader
         title="Proposals"
-        subtitle="All proposals uploaded across the team. Upload-only PDFs — no approval gate."
+        subtitle="All proposals uploaded. Upload-only PDFs — no approval gate."
         actions={
           <>
             <Button

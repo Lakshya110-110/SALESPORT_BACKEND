@@ -442,7 +442,7 @@ class Notification(models.Model):
         ("meeting_reminder", "Meeting reminder"),
         ("deal_won", "Deal won"),
         ("status_changed", "Status changed"),
-        ("team_update", "Team update"),
+        ("team_update", "Activity update"),
     ]
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name="notifications")
     audience = models.CharField(max_length=15, choices=AUDIENCE_CHOICES, default="all")

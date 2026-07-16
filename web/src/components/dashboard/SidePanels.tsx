@@ -300,12 +300,12 @@ export function TeamPerformance({ data }: { data: Dashboard }) {
   return (
     <div className="rounded-card border border-b-subtle bg-surface shadow-sm transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-[1px] hover:border-primary/40 hover:shadow-pop">
       <div className="flex items-center justify-between border-b border-b-subtle px-5 py-3">
-        <h3 className="font-display text-[15px] font-semibold text-text">Team performance</h3>
+        <h3 className="font-display text-[15px] font-semibold text-text">Consultant performance</h3>
         <span className="text-[11.5px] text-subtle">This period</span>
       </div>
       {rows.length === 0 ? (
         <div className="px-5 py-8 text-center text-[12.5px] text-subtle">
-          No enquiries logged by the team yet.
+          No enquiries logged yet.
         </div>
       ) : (
       <div className="sp-scroll max-h-[164px] space-y-3 overflow-y-auto px-5 py-4">

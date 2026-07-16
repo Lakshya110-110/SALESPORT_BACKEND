@@ -111,7 +111,7 @@ export default function MeetingsPage() {
     <>
       <SectionHeader
         title="Meetings"
-        subtitle="All meetings scheduled across the team. Oversight view."
+        subtitle="All meetings scheduled. Oversight view."
         actions={
           <>
             <Button

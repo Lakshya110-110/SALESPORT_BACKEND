@@ -89,7 +89,7 @@ export default function UsersPage() {
     <>
       <SectionHeader
         title="Users"
-        subtitle={`${q.data?.count ?? 0} on the team`}
+        subtitle={`${q.data?.count ?? 0} users`}
         actions={
           <>
             <Button
@@ -168,7 +168,7 @@ export default function UsersPage() {
                       <EmptyState
                         icon={UserIcon}
                         title="No users yet"
-                        message="Add your team here. Only people on this list can sign in — to the web console or the mobile app."
+                        message="Add people here. Only those on this list can sign in — to the web console or the mobile app."
                         action={isAdmin ? (
                           <Button size="sm" leftIcon={<Plus size={14} />} onClick={() => setNewOpen(true)}>
                             Add user

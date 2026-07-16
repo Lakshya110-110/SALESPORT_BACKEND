@@ -180,7 +180,7 @@ export default function EnquiriesPage() {
     <>
       <SectionHeader
         title="Enquiries"
-        subtitle={`${total} enquiries across the team.`}
+        subtitle={`${total} enquiries.`}
         hideSearch={false}
         actions={
           <>
@@ -378,7 +378,7 @@ export default function EnquiriesPage() {
                         <EmptyState
                           icon={Briefcase}
                           title="No enquiries yet"
-                          message="Every lead your team logs shows up here — with its timeline, meetings and proposals in one place."
+                          message="Every lead logged shows up here — with its timeline, meetings and proposals in one place."
                           action={
                             <Button size="sm" leftIcon={<Plus size={14} />} onClick={() => modals.open('newEnquiry')}>
                               New Enquiry
