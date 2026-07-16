@@ -726,8 +726,13 @@ def dashboard(request):
         "won_resolved": won_resolved,
         "resolved_count": resolved_count,
         "by_stage": by_stage,
+        # Only Scheduled counts as "coming". Filtering on the date alone also
+        # counted a meeting that had already been marked Done (or Cancelled)
+        # but whose slot was still later today — so the dashboard read one
+        # higher than the Meetings page, which has always required Scheduled.
         "upcoming_meetings": Meeting.objects.filter(
             scheduled_at__gte=timezone.now(),
+            status="Scheduled",
             **({"consultant": user} if user.role == "consultant" else {}),
         ).count(),
     }

@@ -253,7 +253,10 @@ REST_FRAMEWORK = {
         "rest_framework.filters.SearchFilter",
         "rest_framework.filters.OrderingFilter",
     ),
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    # Honours ?page_size= (capped) — the stock class ignores it silently, which
+    # had every list in the web app computing from its first 25 rows. See
+    # crm/pagination.py.
+    "DEFAULT_PAGINATION_CLASS": "crm.pagination.StandardPagination",
     "PAGE_SIZE": 25,
     # The HTML browsable API is a dev convenience (click-through forms in a
     # browser) that also happens to render an explorable map of every
