@@ -3,12 +3,12 @@ from .models import (
     User, Company, Contact, Enquiry, Touchpoint, NegotiationRound,
     Meeting, Proposal, Notification, MasterData, FollowUp,
 )
-from .phone import is_valid_indian_mobile, PHONE_ERROR
+from .phone import is_valid_indian_mobile, normalize_phone, PHONE_ERROR
 
 
 class IndianMobileMixin:
     """Rejects anything that isn't a real Indian mobile number (10 digits,
-    starting 6-9).
+    starting 6-9), and stores it in one canonical form.
 
     Lives on the serializer, not the form, so the rule holds for every client —
     the Next.js console and the mobile app both go through here, and neither can
@@ -29,7 +29,14 @@ class IndianMobileMixin:
             return value
         if not is_valid_indian_mobile(value):
             raise serializers.ValidationError(PHONE_ERROR)
-        return value
+        # Store one canonical form. Only User.save() normalized before, so a
+        # company or contact kept whatever string was posted: "9876543210",
+        # "09876543210" and "+91 98765 43210" all validate, and all landed in
+        # the column verbatim — the same number stored three ways, which breaks
+        # search, tel: links and any duplicate check. Safe to normalize only
+        # because validation already rejected ambiguous lengths above; the
+        # last-10-digits rule can't silently retarget a valid number here.
+        return normalize_phone(value)
 
 
 class UserSerializer(IndianMobileMixin, serializers.ModelSerializer):
