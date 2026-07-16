@@ -257,6 +257,13 @@ class Touchpoint(models.Model):
         ("Call", "Call"), ("WhatsApp", "WhatsApp"), ("SMS", "SMS"),
         ("Email", "Email"), ("Note", "Note"), ("Meeting", "Meeting"),
         ("Negotiation", "Negotiation"),
+        # System-generated, never picked by a user in the composer: the
+        # timeline's opening entry, written when the enquiry is created so
+        # every lead's history starts at its beginning instead of at whatever
+        # someone happened to log first. Its own channel rather than a "Note"
+        # so it can't be confused with something a consultant wrote, and so it
+        # stays filterable.
+        ("Created", "Created"),
     ]
     SENTIMENT_CHOICES = [("Hot", "Hot"), ("Warm", "Warm"), ("Cold", "Cold")]
     DIRECTION_CHOICES = [("Outbound", "Outbound"), ("Inbound", "Inbound")]

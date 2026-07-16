@@ -133,7 +133,12 @@ export type EnquiryListItem = {
   updated_at: string;
 };
 
-export type TouchpointChannel = 'Call' | 'WhatsApp' | 'SMS' | 'Email' | 'Note' | 'Meeting' | 'Negotiation';
+/**
+ * `Created` is system-generated — the timeline's opening entry, written by the
+ * server when the enquiry is created. It is never offered in the composer.
+ */
+export type TouchpointChannel =
+  | 'Call' | 'WhatsApp' | 'SMS' | 'Email' | 'Note' | 'Meeting' | 'Negotiation' | 'Created';
 
 export type Touchpoint = {
   id: number;

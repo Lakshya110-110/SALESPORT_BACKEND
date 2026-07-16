@@ -311,6 +311,18 @@ class EnquiryViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         owner = serializer.validated_data.get("owner") or self.request.user
         enq = serializer.save(owner=owner)
+        # Open every timeline with the moment the lead came in. Done here, in
+        # the one place all clients create through, so the web console and the
+        # mobile app both get it without either having to remember — and so
+        # neither can write a second one and double up.
+        Touchpoint.objects.create(
+            enquiry=enq,
+            channel="Created",
+            note=(
+                f"Lead created from {enq.source}." if enq.source else "Lead created."
+            ),
+            created_by=self.request.user,
+        )
         notif = Notification.objects.create(
             audience="admin", ntype="new_enquiry",
             title="New enquiry created",

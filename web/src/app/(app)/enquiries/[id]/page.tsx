@@ -398,6 +398,8 @@ function TimelineItem({ t, last }: { t: Touchpoint; last: boolean }) {
     Note: 'var(--accent)',
     Meeting: 'var(--primary)',
     Negotiation: 'var(--danger)',
+    // Muted on purpose: it's the origin marker, not activity anyone did.
+    Created: 'var(--b-strong)',
   };
   return (
     <li className="relative pb-5 pl-7 last:pb-0">
@@ -472,6 +474,7 @@ function channelLabel(t: Touchpoint): string {
     return `Call · ${dir} · ${m ? `${m}m ` : ''}${s}s`;
   }
   if (t.channel === 'Note') return 'Note';
+  if (t.channel === 'Created') return 'Lead created';
   return t.channel;
 }
 
