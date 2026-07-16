@@ -29,20 +29,40 @@ export type ValueBand = {
   min: number;
   /** Exclusive upper bound in rupees; null = open-ended top band. */
   max: number | null;
+  /**
+   * The number actually stored when this band is picked — the band's midpoint.
+   *
+   * Deal value is chosen from a dropdown, but `expected_value` must stay a real
+   * number: the dashboard Sum()s it for pipeline/won value. So the band picks a
+   * representative figure. This makes those KPIs ESTIMATES, which is the
+   * accepted trade-off of banding the input.
+   *
+   * Every `mid` must fall inside its own band, or picking a band and reading it
+   * back would land somewhere else. The open-ended top band has no midpoint, so
+   * it stores its floor (₹50 L) — deliberately conservative: it under-states
+   * the pipeline rather than inventing an unbounded number.
+   */
+  mid: number;
 };
 
 const L = 100000;
 
 export const VALUE_BANDS: ValueBand[] = [
-  { id: 'lt1', label: 'under ₹1 L', min: 0, max: 1 * L },
-  { id: '1-4', label: '₹1–4 L', min: 1 * L, max: 4 * L },
-  { id: '4-7', label: '₹4–7 L', min: 4 * L, max: 7 * L },
-  { id: '7-11', label: '₹7–11 L', min: 7 * L, max: 11 * L },
-  { id: '11-16', label: '₹11–16 L', min: 11 * L, max: 16 * L },
-  { id: '16-26', label: '₹16–26 L', min: 16 * L, max: 26 * L },
-  { id: '26-50', label: '₹26–50 L', min: 26 * L, max: 50 * L },
-  { id: '50+', label: '₹50 L+', min: 50 * L, max: null },
+  { id: 'lt1', label: 'under ₹1 L', min: 0, max: 1 * L, mid: 50000 },
+  { id: '1-4', label: '₹1–4 L', min: 1 * L, max: 4 * L, mid: 250000 },
+  { id: '4-7', label: '₹4–7 L', min: 4 * L, max: 7 * L, mid: 550000 },
+  { id: '7-11', label: '₹7–11 L', min: 7 * L, max: 11 * L, mid: 900000 },
+  { id: '11-16', label: '₹11–16 L', min: 11 * L, max: 16 * L, mid: 1350000 },
+  { id: '16-26', label: '₹16–26 L', min: 16 * L, max: 26 * L, mid: 2100000 },
+  { id: '26-50', label: '₹26–50 L', min: 26 * L, max: 50 * L, mid: 3800000 },
+  { id: '50+', label: '₹50 L+', min: 50 * L, max: null, mid: 5000000 },
 ];
+
+/** The band with this id, or null. `id` is the wire/query-param value. */
+export function bandById(id: string | null | undefined): ValueBand | null {
+  if (!id) return null;
+  return VALUE_BANDS.find((b) => b.id === id) ?? null;
+}
 
 /**
  * The band an amount falls in, or null when there's no figure to band

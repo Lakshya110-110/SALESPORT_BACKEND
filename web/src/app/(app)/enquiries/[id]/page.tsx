@@ -247,10 +247,10 @@ function StatStrip({ e }: { e: EnquiryDetail }) {
   }> = [
     {
       label: 'Expected deal value',
-      value: fmtInr(e.expected_value),
-      money: true,
-      // Band is derived, never stored — the exact figure above stays the truth.
-      hint: bandLabel(e.expected_value),
+      // The band, not the number. Deal value is picked as a range and stored as
+      // that band's midpoint, so rendering the stored figure would show an
+      // invented number ("₹5,50,000") as if someone had quoted it.
+      value: bandLabel(e.expected_value),
       action: (
         <button
           type="button"
@@ -511,16 +511,9 @@ function EnquiryDetailsCard({ e, onEdit }: { e: EnquiryDetail; onEdit: () => voi
 
 function RequirementAnalysisCard({ e, onEdit }: { e: EnquiryDetail; onEdit: () => void }) {
   const em = <span className="italic text-subtle">—</span>;
-  // Exact figure with its derived band beneath — same band the stat tile, the
-  // list filter and the enquiry form show, all read from VALUE_BANDS.
-  const expectedValue = Number(e.expected_value) > 0 ? (
-    <>
-      {fmtInr(e.expected_value)}
-      <span className="mt-[1px] block text-[11px] font-semibold text-subtle">
-        {bandLabel(e.expected_value)}
-      </span>
-    </>
-  ) : em;
+  // The band, for the same reason as the stat tile: the stored figure is a
+  // midpoint, not a quoted price.
+  const expectedValue = Number(e.expected_value) > 0 ? bandLabel(e.expected_value) : em;
   const expectedClose = e.expected_close_date ? ddmm(e.expected_close_date) : em;
   return (
     <Card>

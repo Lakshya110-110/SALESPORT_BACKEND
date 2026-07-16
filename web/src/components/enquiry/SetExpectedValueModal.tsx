@@ -6,14 +6,18 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { endpoints } from '@/lib/api/endpoints';
 import { cn } from '@/lib/utils/cn';
-import { inrInput } from '@/lib/utils/format';
-import { AmountHint } from '@/components/ui/AmountHint';
+import { VALUE_BANDS, bandById, bandFor } from '@/lib/utils/valueBand';
 
 /**
  * SetExpectedValueModal — the "Expected deal value" stat tile's writer.
- * `expected_value` is a plain field on Enquiry (set at creation, otherwise
- * never edited anywhere in the UI) — this is the missing edit path, same
- * shape as SetClientBudgetModal next to it in the stat strip.
+ *
+ * Deal value is picked as a RANGE, not typed: nobody knows the exact figure
+ * this early. What gets stored is the band's midpoint, because the dashboard
+ * still Sum()s expected_value for pipeline/won value — so those KPIs are
+ * estimates built from midpoints, by design.
+ *
+ * Opens on the band the current figure falls in, so saving without touching
+ * the dropdown is a no-op rather than a silent re-banding.
  */
 export function SetExpectedValueModal({
   open,
@@ -26,19 +30,16 @@ export function SetExpectedValueModal({
   enquiryId: number | string;
   currentValue: string;
 }) {
-  const [amount, setAmount] = useState(() =>
-    Number(currentValue) > 0 ? inrInput(currentValue) : '',
-  );
+  const currentBandId = bandFor(currentValue)?.id ?? '';
+  const [bandId, setBandId] = useState(currentBandId);
   const qc = useQueryClient();
 
-  const reset = () => {
-    setAmount(Number(currentValue) > 0 ? inrInput(currentValue) : '');
-  };
+  const reset = () => setBandId(currentBandId);
 
   const submit = useMutation({
     mutationFn: () => {
-      const amt = Number(amount.replace(/,/g, '')) || 0;
-      return endpoints.enquiries.patch(enquiryId, { expected_value: String(amt) });
+      const mid = bandById(bandId)?.mid ?? 0;
+      return endpoints.enquiries.patch(enquiryId, { expected_value: String(mid) });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['enquiries', 'detail', String(enquiryId)] });
@@ -62,7 +63,7 @@ export function SetExpectedValueModal({
             type="submit"
             form="set-expected-value-form"
             loading={submit.isPending}
-            disabled={amount.trim().length === 0}
+            disabled={!bandId || bandId === currentBandId}
           >
             Save
           </Button>
@@ -74,16 +75,18 @@ export function SetExpectedValueModal({
         onSubmit={(e: FormEvent<HTMLFormElement>) => { e.preventDefault(); submit.mutate(); }}
         className="space-y-4"
       >
-        <Field label="Expected deal value (₹)" required>
-          <input
-            value={amount}
-            onChange={(e) => setAmount(inrInput(e.target.value))}
-            inputMode="decimal"
-            placeholder="7,00,000"
+        <Field label="Expected deal value" required>
+          <select
+            value={bandId}
+            onChange={(e) => setBandId(e.target.value)}
             autoFocus
             className={inputCls}
-          />
-          <AmountHint value={amount} showBand />
+          >
+            <option value="">Select a range…</option>
+            {VALUE_BANDS.map((b) => (
+              <option key={b.id} value={b.id}>{b.label}</option>
+            ))}
+          </select>
         </Field>
         {submit.error && (
           <div className="rounded-md bg-danger-soft p-2 text-[12px] text-danger">

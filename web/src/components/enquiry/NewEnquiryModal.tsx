@@ -7,11 +7,10 @@ import { Info } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { DateField } from '@/components/ui/DateField';
-import { AmountHint } from '@/components/ui/AmountHint';
 import { endpoints } from '@/lib/api/endpoints';
 import { cn } from '@/lib/utils/cn';
-import { inrInput } from '@/lib/utils/format';
 import { ddmmToISO } from '@/lib/utils/date';
+import { VALUE_BANDS, bandById } from '@/lib/utils/valueBand';
 import { useMasterDataValues } from '@/lib/hooks/useMasterData';
 import type { Company, EnquiryDetail } from '@/lib/api/types';
 
@@ -43,7 +42,7 @@ type State = {
   email: string;
   industry: string;
   source: string;
-  expectedValue: string;
+  expectedBand: string;
   expectedCloseDate: string;
 };
 
@@ -54,7 +53,7 @@ const initial: State = {
   email: '',
   industry: 'Dairy',
   source: 'Referral',
-  expectedValue: '',
+  expectedBand: '',
   expectedCloseDate: '',
 };
 
@@ -130,7 +129,9 @@ export function NewEnquiryModal({
         source: f.source,
         status: 'New',
         industry: f.industry,
-        expected_value: f.expectedValue ? Number(f.expectedValue.replace(/,/g, '')) : 0,
+        // Store the picked band's midpoint. 0 when nothing was picked — that
+        // reads as "no figure entered" everywhere (a dash, not a band).
+        expected_value: bandById(f.expectedBand)?.mid ?? 0,
         expected_close_date: ddmmToISO(f.expectedCloseDate),
         description: '',
       };
@@ -256,15 +257,20 @@ export function NewEnquiryModal({
               {sources.map((s) => <option key={s}>{s}</option>)}
             </select>
           </Field>
-          <Field label="Expected deal value (₹)">
-            <input
-              value={f.expectedValue}
-              onChange={(e) => set('expectedValue', inrInput(e.target.value))}
-              placeholder="4,50,000"
+          <Field label="Expected deal value">
+            {/* A range, not a figure — nobody knows the exact number this early.
+                The band's midpoint is what gets stored, because the dashboard
+                still has to Sum() a real number for pipeline value. */}
+            <select
+              value={f.expectedBand}
+              onChange={(e) => set('expectedBand', e.target.value)}
               className={inputCls}
-              inputMode="decimal"
-            />
-            <AmountHint value={f.expectedValue} showBand />
+            >
+              <option value="">Select a range…</option>
+              {VALUE_BANDS.map((b) => (
+                <option key={b.id} value={b.id}>{b.label}</option>
+              ))}
+            </select>
           </Field>
           <Field label="Expected close date">
             <DateField

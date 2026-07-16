@@ -203,8 +203,12 @@ export default function EnquiriesPage() {
             tone="primary"
             icon={<CircleDot size={17} strokeWidth={1.9} />}
           />
+          {/* "est." is not decoration: deal value is picked as a band and
+              stored as that band's midpoint, so this total is a sum of
+              midpoints, not of quoted figures. Labelling it as exact would
+              overstate what the number actually knows. */}
           <MiniKpi
-            label="Pipeline"
+            label="Pipeline (est.)"
             value={fmtInrShort(pipelineValue)}
             tone="warning"
             icon={<Briefcase size={17} strokeWidth={1.9} />}
