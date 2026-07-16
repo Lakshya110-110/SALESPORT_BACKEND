@@ -141,7 +141,7 @@ export function EditRequirementModal({
         </Field>
         <div className="rounded-md bg-soft p-3 text-[11.5px] text-muted">
           Enquiry type (Hot / Warm / Cold) is now derived automatically from the
-          expected close date — edit the close date to change it.
+          expected closure date — edit the closure date to change it.
         </div>
         <Field label="Description">
           <textarea

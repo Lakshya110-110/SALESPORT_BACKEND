@@ -147,7 +147,7 @@ export function EditEnquiryDetailsModal({
             ))}
           </select>
         </Field>
-        <Field label="Expected close date">
+        <Field label="Expected closure date">
           <DateField value={closeDate} onChange={setCloseDate} minDate={new Date()} />
           {closeDate.length === 10 && !closeDateValid ? (
             <p className="mt-1.5 text-[11px] text-danger">That date doesn&rsquo;t exist — check the day and month.</p>

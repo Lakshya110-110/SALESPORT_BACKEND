@@ -1280,7 +1280,7 @@ function exportEnquiriesCsv(rows: EnquiryListItem[]) {
     // Exported alongside the raw figure, not instead of it — so a pivot can
     // group by band while the exact number stays available to sum.
     ['Deal size',        (e) => bandLabel(e.expected_value)],
-    ['Expected close',   (e) => e.expected_close_date ?? ''],
+    ['Expected closure', (e) => e.expected_close_date ?? ''],
     ['Owner',            (e) => e.owner_name ?? ''],
     ['Last activity',    (e) => e.updated_at],
   ];

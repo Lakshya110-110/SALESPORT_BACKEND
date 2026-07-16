@@ -20,7 +20,7 @@ import type { Company, EnquiryDetail } from '@/lib/api/types';
  *
  * Two-column form. Fields, order, and copy come from the mockup:
  *   Company · Contact person · Phone · Email · GSTIN · Industry ·
- *   Enquiry source · Enquiry type · Expected value · Expected close date
+ *   Enquiry source · Enquiry type · Expected value · Expected closure date
  * Hint under the fields: "Phone number is the unique identifier".
  *
  * Wire:
@@ -273,7 +273,7 @@ export function NewEnquiryModal({
               ))}
             </select>
           </Field>
-          <Field label="Expected close date">
+          <Field label="Expected closure date">
             <DateField
               value={f.expectedCloseDate}
               onChange={(v) => set('expectedCloseDate', v)}

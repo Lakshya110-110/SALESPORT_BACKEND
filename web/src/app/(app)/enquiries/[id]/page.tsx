@@ -29,7 +29,7 @@ import type { EnquiryDetail, EnquiryStatus, Touchpoint } from '@/lib/api/types';
  *   [Back]
  *   detail-top: name + status badge + priority pill + lead_id sub-line
  *               ─────────────── detail-actions: Update status · Upload Proposal
- *   stat-strip: Expected value · Client budget · Expected close · Contact ·
+ *   stat-strip: Expected value · Client budget · Expected closure · Contact ·
  *               Source · GST number · Industry
  *   dgrid (2-col masonry):
  *     ├── card: Touchpoint Timeline (tp-add + tl items)
@@ -277,7 +277,7 @@ function StatStrip({ e }: { e: EnquiryDetail }) {
         </button>
       ),
     },
-    { label: 'Expected close', value: e.expected_close_date ? ddmm(e.expected_close_date) : '—' },
+    { label: 'Expected closure', value: e.expected_close_date ? ddmm(e.expected_close_date) : '—' },
     { label: 'Contact', value: e.contact_name || e.owner_name || '—' },
     { label: 'Source', value: e.source },
     { label: 'Industry', value: e.industry },
@@ -501,7 +501,7 @@ function EnquiryDetailsCard({ e, onEdit }: { e: EnquiryDetail; onEdit: () => voi
             ['Company', e.company_name],
             ['Owner', e.owner_name ?? '—'],
             ['Priority', e.derived_type],
-            ['Expected close', e.expected_close_date ? ddmm(e.expected_close_date) : '—'],
+            ['Expected closure', e.expected_close_date ? ddmm(e.expected_close_date) : '—'],
             ['Source', e.source],
             ['GSTIN', e.gstin || <span className="italic text-subtle">Add via Edit</span>],
             ['Created', ddmm(e.created_at)],
@@ -541,7 +541,7 @@ function RequirementAnalysisCard({ e, onEdit }: { e: EnquiryDetail; onEdit: () =
             ['Industry', e.industry],
             ['Enquiry type', e.derived_type],
             ['Expected value', expectedValue],
-            ['Expected close', expectedClose],
+            ['Expected closure', expectedClose],
           ]}
         />
         {/* Solution offered + Description sit below the grid as full-width
