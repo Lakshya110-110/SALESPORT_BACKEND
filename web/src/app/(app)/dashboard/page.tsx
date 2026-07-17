@@ -12,8 +12,6 @@ import { session } from '@/lib/auth/session';
 import { periodStartISO } from '@/lib/utils/date';
 import { KpiStrip } from '@/components/dashboard/KpiStrip';
 import { Reveal } from '@/components/ui/Reveal';
-import { GlassFilter, GlassBackdrop } from '@/components/ui/liquid-glass';
-import { LIQUID_GLASS_PREVIEW } from '@/lib/features';
 import { ConversionFunnel } from '@/components/dashboard/ConversionFunnel';
 import {
   EnquiriesByMonth,
@@ -145,19 +143,6 @@ export default function DashboardPage() {
             </button>
           ))}
         </div>
-
-        {/* TEMPORARY liquid-glass preview — LIQUID_GLASS_PREVIEW in lib/features.
-            The filter must be mounted exactly once: every glass pane resolves
-            `url(#glass-distortion)` against the document, and with no filter in
-            the DOM the browser silently drops the rule and you get a plain blur.
-            The backdrop exists because glass over a flat canvas refracts
-            nothing and looks like a slightly grey box. */}
-        {LIQUID_GLASS_PREVIEW && (
-          <>
-            <GlassFilter />
-            <GlassBackdrop />
-          </>
-        )}
 
         {loading || !dashboard ? (
           <DashboardSkeleton />

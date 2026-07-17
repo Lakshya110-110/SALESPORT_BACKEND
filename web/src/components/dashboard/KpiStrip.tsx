@@ -10,8 +10,6 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
-import { GlassEffect } from '@/components/ui/liquid-glass';
-import { LIQUID_GLASS_PREVIEW } from '@/lib/features';
 import { fmtInrShort } from '@/lib/utils/format';
 import type { Dashboard } from '@/lib/api/types';
 
@@ -130,38 +128,6 @@ export function KpiStrip({ data }: { data: Dashboard }) {
 
 function Kpi({ card, delay }: { card: KpiCard; delay: number }) {
   const Icon = card.icon;
-
-  // TEMPORARY liquid-glass preview — LIQUID_GLASS_PREVIEW in lib/features.
-  // Same content, glass shell instead of the solid card. The entrance stagger
-  // moves onto the wrapper so the strip still arrives in sequence.
-  if (LIQUID_GLASS_PREVIEW) {
-    return (
-      <GlassEffect
-        className="h-full animate-slide-up opacity-0 [animation-fill-mode:forwards] hover:-translate-y-[2px]"
-        style={{ animationDelay: `${delay}ms` }}
-      >
-        <div className="flex h-full flex-col p-[18px]">
-          <div className="flex h-[34px] items-start justify-between gap-2">
-            <div className="line-clamp-2 text-[11px] font-semibold uppercase leading-[1.35] tracking-wider text-black/70 dark:text-white/70">
-              {card.label}
-            </div>
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/40 text-black/70 dark:bg-white/10 dark:text-white/80">
-              <Icon size={15} strokeWidth={2} />
-            </span>
-          </div>
-          <div className="mt-auto">
-            <div className="font-display text-[22px] font-extrabold leading-none tracking-[-.01em] text-black dark:text-white">
-              {card.value}
-            </div>
-            {card.sub && (
-              <div className="mt-1.5 text-[11.5px] font-medium text-black/60 dark:text-white/60">{card.sub}</div>
-            )}
-          </div>
-        </div>
-      </GlassEffect>
-    );
-  }
-
   return (
     <div
       className={cn(

@@ -18,16 +18,3 @@
  * 36 proposals, including uploaded PDFs, remain in the database untouched.
  */
 export const PROPOSALS_ENABLED = false;
-
-/**
- * Liquid glass on the dashboard — TEMPORARY, for looking at only.
- *
- * Set to `false` to put the dashboard back exactly as it was: the flag gates
- * the backdrop, the SVG filter and every glass wrapper, so nothing but this
- * boolean has to change. Delete `components/ui/liquid-glass.tsx` and the
- * `glassDrift` keyframes in tokens.css to remove it entirely.
- *
- * Not shipped as-is: white-on-glass drops the KPI text well below the contrast
- * the rest of the app holds to. This is a preview, not a proposal.
- */
-export const LIQUID_GLASS_PREVIEW = true;
