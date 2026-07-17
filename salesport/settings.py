@@ -326,6 +326,39 @@ OTP_RETURN_IN_RESPONSE = env_bool("OTP_RETURN_IN_RESPONSE", DEBUG)
 OTP_TEST_PHONE_NUMBERS = env_list("OTP_TEST_PHONE_NUMBERS")
 OTP_PROVIDER = env("OTP_PROVIDER", "")
 
+# --- SMS gateway (bulksmsserviceproviders.com) ------------------------------
+# Active only when OTP_PROVIDER is set; otherwise DevOtpDeliveryService runs
+# and none of this is read.
+#
+# SMS_AUTH_KEY has NO DEFAULT on purpose. It is a bearer credential: anyone
+# holding it can send SMS billed to this account. It belongs in the server's
+# environment and must never be committed. ProviderOtpDeliveryService refuses
+# to send when it's empty rather than firing a request the gateway would
+# reject anyway.
+SMS_AUTH_KEY = env("SMS_AUTH_KEY", "")
+SMS_SENDER = env("SMS_SENDER", "BGIVNS")
+# 'B' is what the provider's own working sample uses. Their docs also mention
+# TR (transactional) / PR (promotional) for a different endpoint — if delivery
+# fails, this is the first thing to question.
+SMS_ROUTE = env("SMS_ROUTE", "B")
+# HTTPS by default even though the provider's sample says http://: the auth
+# key travels in this request. Verified their host answers on TLS.
+SMS_API_URL = env("SMS_API_URL", "https://sms.bulksmsserviceproviders.com/api/send_http.php")
+SMS_DLT_TEMPLATE_ID = env("SMS_DLT_TEMPLATE_ID", "1507163550834828118")
+# MUST match the DLT-approved template for SMS_DLT_TEMPLATE_ID word for word.
+# India's DLT regime compares the delivered text to the registered template;
+# any drift and the operator drops the message silently — the user just never
+# gets a code. `{code}` is the only substitution.
+SMS_OTP_TEMPLATE = env(
+    "SMS_OTP_TEMPLATE",
+    "Use the OTP {code} to verify your contact number. BGIVNS",
+)
+# The approved template is plain English. unicode=1 switches the gateway to a
+# 2-byte encoding, which shortens the segment limit and can break the DLT
+# match — leave off unless the template itself is non-Latin.
+SMS_UNICODE = env_bool("SMS_UNICODE", False)
+SMS_TIMEOUT_SECONDS = int(env("SMS_TIMEOUT_SECONDS", "10"))
+
 # Refuse to boot in the one configuration that hands out login codes to the
 # internet: not DEBUG (so this is a real deployment), echoing the OTP in the
 # response, and no allowlist restricting WHOSE code gets echoed.
@@ -340,7 +373,14 @@ OTP_PROVIDER = env("OTP_PROVIDER", "")
 # deliberate and narrow — set OTP_TEST_PHONE_NUMBERS to the handful of numbers
 # that may receive an echoed code while no SMS gateway exists. Once
 # OTP_PROVIDER is wired up, drop OTP_RETURN_IN_RESPONSE entirely.
-if not DEBUG and OTP_RETURN_IN_RESPONSE and not OTP_TEST_PHONE_NUMBERS:
+# `not OTP_PROVIDER` matters: with a real gateway configured,
+# ProviderOtpDeliveryService returns echo_in_response=False unconditionally, so
+# OTP_RETURN_IN_RESPONSE can't leak anything no matter what it's set to. Without
+# this clause the guard blocks the SECURE config — a deploy that has done the
+# right thing (wired up SMS) but left a stale OTP_RETURN_IN_RESPONSE=True in its
+# .env would refuse to boot for no reason. A guard that cries wolf on the good
+# config gets switched off, and then it isn't there for the bad one.
+if not DEBUG and not OTP_PROVIDER and OTP_RETURN_IN_RESPONSE and not OTP_TEST_PHONE_NUMBERS:
     raise ImproperlyConfigured(
         "OTP_RETURN_IN_RESPONSE=True with DEBUG=False and no "
         "OTP_TEST_PHONE_NUMBERS: the API would return a valid login code for "

@@ -27,7 +27,7 @@ from .sockets import (
     emit_user_created, emit_user_updated, emit_user_deleted,
 )
 from .notifications import get_notification_service
-from .otp_delivery import get_otp_delivery_service
+from .otp_delivery import get_otp_delivery_service, SmsSendError
 
 
 # ===========================================================================
@@ -56,7 +56,17 @@ def request_otp(request):
             status=status.HTTP_403_FORBIDDEN,
         )
     otp = OTP.issue(phone)
-    result = get_otp_delivery_service().send_otp(phone=phone, code=otp.code)
+    try:
+        result = get_otp_delivery_service().send_otp(phone=phone, code=otp.code)
+    except SmsSendError as exc:
+        # Don't claim "OTP sent" for a message that never left — the user
+        # would sit on the OTP screen waiting for a code that isn't coming.
+        # 502: we're fine, the upstream gateway isn't. The issued OTP is left
+        # to expire on its own; nothing is leaked by that.
+        return Response(
+            {"detail": f"Couldn't send the OTP right now. {exc} Please try again."},
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
     payload = {"detail": "OTP sent", "phone": phone}
     if result.get("echo_in_response"):
         payload["otp"] = otp.code  # DEV/TEST ONLY — see crm/otp_delivery.py
