@@ -10,6 +10,7 @@ import { OtpBoxes } from '@/components/ui/OtpBoxes';
 import { endpoints } from '@/lib/api/endpoints';
 import { ApiError } from '@/lib/api/client';
 import { session } from '@/lib/auth/session';
+import { canUseConsole } from '@/lib/auth/console';
 
 type Step = 'phone' | 'otp';
 
@@ -50,7 +51,10 @@ export function LoginPanel() {
     // so reading it here sent the 5-digit prefix to the server.
     mutationFn: (entered: string) => endpoints.verifyOtp(rawPhone, entered),
     onSuccess: (data) => {
-      if (data.user.role !== 'admin') {
+      // Everyone except consultants — see lib/auth/console. This previously
+      // read `role !== 'admin'`, which also locked out managers, founders and
+      // sales heads with a message telling them to use the mobile app.
+      if (!canUseConsole(data.user.role)) {
         setError('This account does not have web console access. Please use the mobile app.');
         return;
       }

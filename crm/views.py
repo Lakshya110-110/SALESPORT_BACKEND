@@ -20,7 +20,7 @@ from .serializers import (
     NotificationSerializer, MasterDataSerializer, FollowUpSerializer,
     RequestOTPSerializer, VerifyOTPSerializer,
 )
-from .permissions import IsAdminRole
+from .permissions import IsAdminRole, IsConsoleUser
 from .phone import normalize_phone
 from .sockets import (
     emit_notification, emit_enquiry_event, emit_enquiry_action,
@@ -146,7 +146,11 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ("create", "update", "partial_update", "destroy"):
             return [IsAdminRole()]
-        return [permissions.IsAuthenticated()]
+        # Reading the directory is console-only. Any authenticated user could
+        # previously list every account — names, roles and PHONE NUMBERS — which
+        # is a staff contact list handed to whoever holds any token. A consultant
+        # on the mobile app has no screen that needs it.
+        return [IsConsoleUser()]
 
     def perform_create(self, serializer):
         user = serializer.save()
@@ -701,6 +705,7 @@ def _period_start(period: str):
 
 
 @api_view(["GET"])
+@permission_classes([IsConsoleUser])
 def dashboard(request):
     user = request.user
     qs = Enquiry.objects.all()
