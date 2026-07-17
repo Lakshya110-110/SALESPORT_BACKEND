@@ -266,14 +266,17 @@ body.dark::before {
   border-radius: var(--r-md);
 }
 
-/* --- Row hover lift ---
-   Colour alone is a flat state change; a 1px nudge makes the row feel like it
-   responds. Cheap: transform only. */
+/* --- Row hover ---
+   Colour only. There WAS a 2px translate here to make the row feel responsive;
+   it's gone. A transform on a <tr> is a bad idea: it creates a stacking context
+   and containing block inside a table that also has sticky headers, it feeds
+   the element's scrollable overflow, and browsers disagree about how a
+   transformed row lays out. That is a lot of risk for 2px of polish, and it was
+   a live suspect while chasing a hover-driven bounce. The hover:bg-soft on each
+   row already does the job. */
 .sp-row-hover {
-  transition: background-color var(--dur-fast) var(--ease-out),
-              transform var(--dur-fast) var(--ease-out);
+  transition: background-color var(--dur-fast) var(--ease-out);
 }
-.sp-row-hover:hover { transform: translate3d(2px, 0, 0); }
 
 /* Reduced-motion global.
    The reveal is ALSO short-circuited in JS (Reveal.tsx checks the same query
@@ -290,6 +293,5 @@ body.dark::before {
     scroll-behavior: auto !important;
   }
   .sp-reveal { opacity: 1; transform: none; }
-  .sp-row-hover:hover { transform: none; }
   .sp-skeleton { animation: none; }
 }
