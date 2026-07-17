@@ -26,6 +26,18 @@ main {
   scrollbar-color: var(--b-subtle) transparent;
   transition: scrollbar-color var(--dur-fast) var(--ease-out);
 }
+
+/* Stop scroll chaining at the edge of a nested scroller.
+   A list table scrolls inside <main>, which is itself a scroller. Reaching the
+   end of the table handed the leftover wheel momentum to <main>, which lurched
+   by however much it happened to overflow — 13px on Users. So hitting the
+   bottom of a table made the whole layout twitch, which is what read as the
+   edge "glitching".
+   `contain` keeps the scroll where the pointer is: the table just stops. The
+   page still scrolls normally when the pointer is outside a table. */
+.sp-scroll {
+  overscroll-behavior: contain;
+}
 .sp-scroll::-webkit-scrollbar,
 main::-webkit-scrollbar {
   width: 4px;
