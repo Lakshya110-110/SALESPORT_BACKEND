@@ -20,7 +20,7 @@ import { endpoints } from '@/lib/api/endpoints';
 import { ddmm, initials, avatarColor } from '@/lib/utils/format';
 import { isValidDDMM } from '@/lib/utils/date';
 import { useMasterDataValues } from '@/lib/hooks/useMasterData';
-import { isValidIndianMobile, phoneError } from '@/lib/utils/phone';
+import { isValidIndianMobile, phoneError, formatIndianMobile } from '@/lib/utils/phone';
 import { cn } from '@/lib/utils/cn';
 import type { Meeting, Company, User as UserT, EnquiryListItem } from '@/lib/api/types';
 
@@ -602,8 +602,9 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
                 <input
                   className={inputCls}
                   placeholder="98765 43210"
+                  inputMode="numeric"
                   value={prospectPhone}
-                  onChange={(e) => setProspectPhone(e.target.value)}
+                  onChange={(e) => setProspectPhone(formatIndianMobile(e.target.value))}
                 />
                 {phoneError(prospectPhone) && (
                   <span className="mt-1 block text-[11px] text-danger">{phoneError(prospectPhone)}</span>

@@ -35,6 +35,27 @@ export function isValidIndianMobile(raw: string | null | undefined): boolean {
 }
 
 /**
+ * Live input formatter — call from a phone field's onChange so it reads
+ * "98765 43210" as it's typed. Ten digits, grouped 5+5.
+ *
+ * Hard-caps at 10, so an 11th keystroke does nothing rather than quietly
+ * producing a number that isn't one. Tolerates a pasted "+91…", "91…" or
+ * leading "0" by dropping the prefix instead of the subscriber digits — the
+ * naive alternative (keep the last 10) turns a paste of "+919876543210" into
+ * a plausible but WRONG number.
+ *
+ * No "+91" chip in the output: this is the bare national number, which is
+ * also what the API stores.
+ */
+export function formatIndianMobile(raw: string): string {
+  let digits = String(raw ?? '').replace(/\D/g, '');
+  if (digits.length > 10 && digits.startsWith('91')) digits = digits.slice(2);
+  if (digits.length > 10 && digits.startsWith('0')) digits = digits.replace(/^0+/, '');
+  digits = digits.slice(0, 10);
+  return digits.length <= 5 ? digits : `${digits.slice(0, 5)} ${digits.slice(5)}`;
+}
+
+/**
  * The error to show for a partially-typed field, or null while it's still
  * plausible. Returns null for empty (that's a required-field question, not a
  * format one) and stays quiet until 10 digits are in — EXCEPT when the first
