@@ -8,6 +8,8 @@ from datetime import timedelta
 import os
 import warnings
 
+from django.core.exceptions import ImproperlyConfigured
+
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -323,6 +325,30 @@ PROPOSALS_ENABLED = env_bool("PROPOSALS_ENABLED", False)
 OTP_RETURN_IN_RESPONSE = env_bool("OTP_RETURN_IN_RESPONSE", DEBUG)
 OTP_TEST_PHONE_NUMBERS = env_list("OTP_TEST_PHONE_NUMBERS")
 OTP_PROVIDER = env("OTP_PROVIDER", "")
+
+# Refuse to boot in the one configuration that hands out login codes to the
+# internet: not DEBUG (so this is a real deployment), echoing the OTP in the
+# response, and no allowlist restricting WHOSE code gets echoed.
+#
+# In that state `POST /api/auth/request-otp/` returns the live code for ANY
+# registered phone, to any anonymous caller — knowing a colleague's number is
+# enough to sign in as them. It is not a theoretical hole: it was reachable on
+# the public deployment, and reading one code out of the JSON is how this was
+# confirmed.
+#
+# Fails loudly at startup rather than quietly serving. The escape hatch is
+# deliberate and narrow — set OTP_TEST_PHONE_NUMBERS to the handful of numbers
+# that may receive an echoed code while no SMS gateway exists. Once
+# OTP_PROVIDER is wired up, drop OTP_RETURN_IN_RESPONSE entirely.
+if not DEBUG and OTP_RETURN_IN_RESPONSE and not OTP_TEST_PHONE_NUMBERS:
+    raise ImproperlyConfigured(
+        "OTP_RETURN_IN_RESPONSE=True with DEBUG=False and no "
+        "OTP_TEST_PHONE_NUMBERS: the API would return a valid login code for "
+        "ANY registered phone number to ANY caller. Either set "
+        "OTP_TEST_PHONE_NUMBERS to the specific numbers allowed to receive an "
+        "echoed code, or set OTP_RETURN_IN_RESPONSE=False (note: with no SMS "
+        "provider configured, that means nobody can log in)."
+    )
 
 # ---------------------------------------------------------------------------
 # CORS — wildcard is a local-dev convenience only. In production
