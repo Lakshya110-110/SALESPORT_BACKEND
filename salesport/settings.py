@@ -139,8 +139,10 @@ else:
             "PASSWORD": env("DB_PASSWORD", ""),
             "HOST": env("DB_HOST", "127.0.0.1"),
             "PORT": env("DB_PORT", "3306"),
-            "OPTIONS": {"charset": "utf8mb4"},
-            "CONN_MAX_AGE": int(env("DB_CONN_MAX_AGE", "60")),
+            "OPTIONS": {
+                "charset": "utf8mb4",
+                **({"sql_mode": env("DB_SQL_MODE")} if env("DB_SQL_MODE") else {}),
+            },
         }
     }
 

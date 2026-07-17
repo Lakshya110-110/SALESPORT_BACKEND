@@ -1,0 +1,150 @@
+INFO:     Started server process [2620817]
+INFO:     Waiting for application startup.
+INFO:     ASGI 'lifespan' protocol appears unsupported.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:3000 (Press CTRL+C to quit)
+Unauthorized: /api/
+INFO:     127.0.0.1:52226 - "GET /api/ HTTP/1.1" 401 Unauthorized
+Unauthorized: /api/
+INFO:     127.0.0.1:60240 - "GET /api/ HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:39862 - "OPTIONS /api/auth/login/ HTTP/1.1" 200 OK
+Not Found: /api/auth/login/
+INFO:     127.0.0.1:39876 - "POST /api/auth/login/ HTTP/1.1" 404 Not Found
+INFO:     13.200.240.11:57608 - "OPTIONS /api/auth/request-otp/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:53045 - "OPTIONS /api/auth/request-otp/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:53045 - "POST /api/auth/request-otp/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:53045 - "OPTIONS /api/auth/verify-otp/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:53045 - "POST /api/auth/verify-otp/ HTTP/1.1" 200 OK
+Bad Request: /api/auth/verify-otp/
+INFO:     182.77.57.99:51674 - "POST /api/auth/verify-otp/ HTTP/1.1" 400 Bad Request
+INFO:     Shutting down
+INFO:     Finished server process [2620817]
+INFO:     Started server process [24910]
+INFO:     Waiting for application startup.
+INFO:     ASGI 'lifespan' protocol appears unsupported.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:3000 (Press CTRL+C to quit)
+Unauthorized: /api/
+INFO:     127.0.0.1:33136 - "GET /api/ HTTP/1.1" 401 Unauthorized
+INFO:     182.77.57.99:58355 - "OPTIONS /api/auth/request-otp/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58355 - "POST /api/auth/request-otp/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58355 - "OPTIONS /api/auth/verify-otp/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58355 - "POST /api/auth/verify-otp/ HTTP/1.1" 200 OK
+Bad Request: /api/auth/verify-otp/
+INFO:     182.77.57.99:58355 - "POST /api/auth/verify-otp/ HTTP/1.1" 400 Bad Request
+Bad Request: /api/auth/verify-otp/
+INFO:     182.77.57.99:58355 - "POST /api/auth/verify-otp/ HTTP/1.1" 400 Bad Request
+Bad Request: /api/auth/verify-otp/
+INFO:     182.77.57.99:58355 - "POST /api/auth/verify-otp/ HTTP/1.1" 400 Bad Request
+Bad Request: /api/auth/verify-otp/
+INFO:     182.77.57.99:58355 - "POST /api/auth/verify-otp/ HTTP/1.1" 400 Bad Request
+Bad Request: /api/auth/verify-otp/
+INFO:     182.77.57.99:58355 - "POST /api/auth/verify-otp/ HTTP/1.1" 400 Bad Request
+Bad Request: /api/auth/verify-otp/
+INFO:     182.77.57.99:58355 - "POST /api/auth/verify-otp/ HTTP/1.1" 400 Bad Request
+INFO:     182.77.57.99:58355 - "OPTIONS /api/notifications/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58355 - "OPTIONS /api/enquiries/?page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58965 - "OPTIONS /api/dashboard/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:55993 - "OPTIONS /api/enquiries/?page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:65386 - "OPTIONS /api/enquiries/?queue=mine&page_size=4 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:55449 - "OPTIONS /api/enquiries/?stalled=1&page_size=20 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52670 - "OPTIONS /api/master-data/?category=industry HTTP/1.1" 200 OK
+INFO:     ('182.77.57.99', 65401) - "WebSocket /socket.io/?EIO=4&transport=websocket" [accepted]
+INFO:     182.77.57.99:58355 - "OPTIONS /api/master-data/?category=source HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58355 - "GET /api/enquiries/?queue=mine&page_size=4 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58965 - "GET /api/notifications/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:65386 - "GET /api/master-data/?category=industry HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52670 - "GET /api/dashboard/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:55993 - "GET /api/enquiries/?page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:55449 - "GET /api/enquiries/?stalled=1&page_size=20 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58355 - "GET /api/master-data/?category=source HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52670 - "GET /api/enquiries/?page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58355 - "OPTIONS /api/master-data/?category=enquiry_type HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52670 - "OPTIONS /api/master-data/?category=status HTTP/1.1" 200 OK
+INFO:     182.77.57.99:55449 - "OPTIONS /api/enquiries/?ordering=-created_at&page=1&page_size=25 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:55993 - "GET /api/dashboard/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58355 - "GET /api/master-data/?category=enquiry_type HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52670 - "GET /api/master-data/?category=status HTTP/1.1" 200 OK
+INFO:     182.77.57.99:55449 - "GET /api/enquiries/?ordering=-created_at&page=1&page_size=25 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:55449 - "OPTIONS /api/companies/?search=ff&page_size=6 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52670 - "OPTIONS /api/companies/?search=ffj&page_size=6 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:55449 - "GET /api/companies/?search=ff&page_size=6 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52670 - "GET /api/companies/?search=ffj&page_size=6 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52861 - "OPTIONS /api/companies/?search=ffj&page_size=20 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52861 - "GET /api/companies/?search=ffj&page_size=20 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52861 - "OPTIONS /api/companies/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52861 - "POST /api/companies/ HTTP/1.1" 201 Created
+INFO:     182.77.57.99:52861 - "OPTIONS /api/contacts/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52861 - "POST /api/contacts/ HTTP/1.1" 201 Created
+INFO:     182.77.57.99:52861 - "OPTIONS /api/enquiries/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52861 - "POST /api/enquiries/ HTTP/1.1" 201 Created
+INFO:     182.77.57.99:50461 - "GET /api/notifications/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:57486 - "GET /api/dashboard/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:59436 - "GET /api/enquiries/?ordering=-created_at&page=1&page_size=25 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:50461 - "GET /api/dashboard/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:57486 - "GET /api/enquiries/?ordering=-created_at&page=1&page_size=25 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:57486 - "OPTIONS /api/enquiries/161/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:57486 - "GET /api/enquiries/161/ HTTP/1.1" 200 OK
+INFO:     ('182.77.57.99', 61992) - "WebSocket /socket.io/?EIO=4&transport=websocket" [accepted]
+INFO:     182.77.57.99:52861 - "GET /api/master-data/?category=source HTTP/1.1" 200 OK
+INFO:     182.77.57.99:59436 - "GET /api/master-data/?category=industry HTTP/1.1" 200 OK
+INFO:     182.77.57.99:57486 - "GET /api/notifications/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:50461 - "GET /api/enquiries/161/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:57486 - "GET /api/master-data/?category=enquiry_type HTTP/1.1" 200 OK
+INFO:     182.77.57.99:50461 - "GET /api/master-data/?category=status HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52861 - "GET /api/dashboard/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:59436 - "GET /api/enquiries/?ordering=-created_at&page=1&page_size=25 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:59436 - "GET /api/notifications/ HTTP/1.1" 200 OK
+INFO:     ('182.77.57.99', 57060) - "WebSocket /socket.io/?EIO=4&transport=websocket" [accepted]
+INFO:     182.77.57.99:52861 - "GET /api/master-data/?category=status HTTP/1.1" 200 OK
+INFO:     182.77.57.99:57486 - "GET /api/master-data/?category=source HTTP/1.1" 200 OK
+INFO:     182.77.57.99:50461 - "GET /api/master-data/?category=enquiry_type HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62680 - "GET /api/master-data/?category=industry HTTP/1.1" 200 OK
+INFO:     182.77.57.99:59436 - "GET /api/dashboard/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:63799 - "GET /api/enquiries/?ordering=-created_at&page=1&page_size=25 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:63799 - "OPTIONS /api/master-data/?category=mode HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62680 - "OPTIONS /api/meetings/?page_size=500 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:59436 - "OPTIONS /api/meetings/?when=upcoming&page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:63799 - "GET /api/master-data/?category=mode HTTP/1.1" 200 OK
+INFO:     182.77.57.99:59436 - "GET /api/meetings/?page_size=500 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62680 - "GET /api/meetings/?when=upcoming&page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62680 - "OPTIONS /api/proposals/?page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62680 - "GET /api/proposals/?page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62643 - "OPTIONS /api/auth/request-otp/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62643 - "POST /api/auth/request-otp/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62643 - "OPTIONS /api/auth/verify-otp/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62643 - "POST /api/auth/verify-otp/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62643 - "OPTIONS /api/notifications/ HTTP/1.1" 200 OK
+INFO:     ('182.77.57.99', 59618) - "WebSocket /socket.io/?EIO=4&transport=websocket" [accepted]
+INFO:     182.77.57.99:62643 - "OPTIONS /api/enquiries/?stalled=1&page_size=20 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:56647 - "OPTIONS /api/enquiries/?page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58998 - "OPTIONS /api/dashboard/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52844 - "OPTIONS /api/enquiries/?page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62939 - "OPTIONS /api/enquiries/?queue=mine&page_size=4 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:64984 - "OPTIONS /api/master-data/?category=industry HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62643 - "OPTIONS /api/master-data/?category=source HTTP/1.1" 200 OK
+INFO:     182.77.57.99:56647 - "GET /api/notifications/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:64984 - "GET /api/enquiries/?queue=mine&page_size=4 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62643 - "GET /api/master-data/?category=industry HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62939 - "GET /api/dashboard/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:56647 - "GET /api/master-data/?category=source HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58998 - "GET /api/enquiries/?page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52844 - "GET /api/enquiries/?stalled=1&page_size=20 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58998 - "GET /api/enquiries/?page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58998 - "OPTIONS /api/proposals/?page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58998 - "GET /api/proposals/?page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58998 - "OPTIONS /api/master-data/?category=mode HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62939 - "OPTIONS /api/meetings/?page_size=500 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52844 - "OPTIONS /api/meetings/?when=upcoming&page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:52844 - "GET /api/master-data/?category=mode HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62939 - "GET /api/meetings/?page_size=500 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58998 - "GET /api/meetings/?when=upcoming&page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58998 - "OPTIONS /api/users/?page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58998 - "GET /api/users/?page_size=100 HTTP/1.1" 200 OK
+Not Found: /
+INFO:     182.77.57.99:63374 - "GET / HTTP/1.1" 404 Not Found
+Not Found: /favicon.ico
+INFO:     182.77.57.99:63374 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     182.77.57.99:55602 - "GET /api/users/?page_size=100 HTTP/1.1" 200 OK
+INFO:     182.77.57.99:62173 - "GET /api/notifications/ HTTP/1.1" 200 OK
+INFO:     182.77.57.99:58522 - "GET /api/notifications/ HTTP/1.1" 200 OK
