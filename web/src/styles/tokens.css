@@ -258,6 +258,26 @@ body.dark::before {
 }
 .sp-row-hover:hover { transform: translate3d(2px, 0, 0); }
 
+/* --- Liquid glass preview (components/ui/liquid-glass.tsx) — TEMPORARY ---
+   The supplied snippet was Tailwind v4 (`@import "tailwindcss"` + a
+   `moveBackground` keyframe that scrolls a tiled photo). This project is on
+   Tailwind 3.4.6, so the keyframes live here instead; and since the backdrop
+   is a colour-wash rather than a repeating image, panning it vertically would
+   just slide a gradient off the screen. These blobs drift in place, which is
+   what gives the displacement map something moving to bite on.
+   Delete this block when the preview goes. */
+[data-theme="dark"] [data-glass-backdrop],
+body.dark [data-glass-backdrop] {
+  /* Dark canvas is #000 by design — a light wash here would fight it. */
+  background: linear-gradient(120deg, #0b1020 0%, #000000 45%, #140b22 100%) !important;
+}
+
+@keyframes glassDrift {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33%      { transform: translate3d(6%, -4%, 0) scale(1.08); }
+  66%      { transform: translate3d(-5%, 5%, 0) scale(0.96); }
+}
+
 /* Reduced-motion global.
    The reveal is ALSO short-circuited in JS (Reveal.tsx checks the same query
    and mounts revealed), because clamping the duration here would still run the
@@ -273,6 +293,7 @@ body.dark::before {
     scroll-behavior: auto !important;
   }
   .sp-reveal { opacity: 1; transform: none; }
+  [style*="glassDrift"] { animation: none !important; }
   .sp-row-hover:hover { transform: none; }
   .sp-skeleton { animation: none; }
 }
