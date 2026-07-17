@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Bell, Users, AlertCircle, FileText, Calendar, CheckCircle2, Info, Award } from 'lucide-react';
+import { Bell, Users, AlertCircle, FileText, Calendar, CheckCircle2, Info, Award, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { timeAgo } from '@/lib/utils/format';
 import { endpoints } from '@/lib/api/endpoints';
@@ -166,7 +166,10 @@ function NotifItem({ n }: { n: Notification }) {
   );
 }
 
-type IconTone = [React.ComponentType<{ size?: number; strokeWidth?: number }>, string];
+/* Must be lucide's own LucideIcon. A ComponentType declared with narrower props
+   isn't assignable from lucide's forwardRef icons, so hand-rolling this alias
+   breaks `next build` while `next dev` (which skips typecheck) stays green. */
+type IconTone = [LucideIcon, string];
 
 function iconForType(t: Notification['ntype']): IconTone {
   switch (t) {

@@ -5,12 +5,16 @@
  * Confirmed at CHECKPOINT 0: bearer JWT in localStorage (not httpOnly cookie).
  * If the security bar rises later, this module is the only place that changes.
  */
+import type { User } from '@/lib/api/types';
+
 export type SessionUser = {
   id: number;
   phone: string;
   name: string;
   email?: string;
-  role: 'admin' | 'consultant';
+  /* Derived from the API type, never restated — a second hand-written union
+     drifts silently, and `next dev` won't catch it. */
+  role: User['role'];
   avatar_color?: string;
   initials?: string;
   is_active?: boolean;
