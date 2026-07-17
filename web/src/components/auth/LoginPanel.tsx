@@ -45,7 +45,10 @@ export function LoginPanel() {
   });
 
   const verifyOtp = useMutation({
-    mutationFn: () => endpoints.verifyOtp(rawPhone, code),
+    // Takes the code as an argument rather than closing over `code`. When
+    // onComplete fires on the 6th keystroke, the state hasn't re-rendered yet,
+    // so reading it here sent the 5-digit prefix to the server.
+    mutationFn: (entered: string) => endpoints.verifyOtp(rawPhone, entered),
     onSuccess: (data) => {
       if (data.user.role !== 'admin') {
         setError('This account does not have web console access. Please use the mobile app.');
@@ -74,12 +77,22 @@ export function LoginPanel() {
     // a near-simultaneous manual "Verify" click could otherwise fire a
     // second mutate() while the first is still in flight.
     if (verifyOtp.isPending) return;
-    if (code.length !== 6) {
+    // onComplete passes the freshly-typed code as a string; the "Verify"
+    // button passes a FormEvent and we fall back to state.
+    //
+    // This MUST use the passed value. onComplete runs in the same tick as the
+    // onChange that produced it, so `code` is still one keystroke behind —
+    // reading it here rejected a visibly-complete code with "Enter the 6-digit
+    // code", and (worse) would have submitted the 5-digit prefix. The auto-fill
+    // hid this: it set all six at once and you clicked Verify a beat later, by
+    // which point state had caught up. Typing the code is what exposed it.
+    const entered = typeof e === 'string' ? e : code;
+    if (entered.length !== 6) {
       setError('Enter the 6-digit code');
       return;
     }
     setError(null);
-    verifyOtp.mutate();
+    verifyOtp.mutate(entered);
   };
 
   if (step === 'phone') {
@@ -101,7 +114,9 @@ export function LoginPanel() {
             const d = e.target.value.replace(/\D/g, '').slice(0, 10);
             setPhone(d.length <= 5 ? d : `${d.slice(0, 5)} ${d.slice(5)}`);
           }}
-          placeholder="98765 43210"
+          // Not a sample number: it read as real data, and it happened to be
+          // an actual admin's number, which is a confusing thing to prefill-shaped.
+          placeholder="Enter your 10-digit mobile number"
           error={error && !requestOtp.isPending ? error : undefined}
         />
 
