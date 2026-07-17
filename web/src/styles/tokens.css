@@ -230,6 +230,23 @@ body.dark::before {
   will-change: auto;
 }
 
+/* --- Table scroller inside a rounded card ---
+   Every list page puts a square, scrolling table inside a card with a 16px
+   radius, and the card is `overflow: visible` — so at the bottom of the scroll
+   the last row and the scrollbar paint straight over the rounded corners. It
+   reads as the corner tearing as you reach the edge.
+   `overflow: hidden` on the card would clip the corners but also kill the
+   sticky header (a scroll container can't be clipped by an ancestor without
+   the sticky positioning losing its containing block). So round the SCROLLER's
+   bottom corners instead: it's the element actually painting there, and its
+   own overflow already clips its content to that curve.
+   Only the bottom two — the top of the scroller meets the filter bar's border,
+   which is square by design. */
+.sp-scroll.overflow-auto {
+  border-bottom-left-radius: var(--r-lg);
+  border-bottom-right-radius: var(--r-lg);
+}
+
 /* --- Skeleton shimmer ---
    A travelling highlight reads as "loading" in a way a pulsing block doesn't:
    it implies content arriving rather than something merely blinking. */
