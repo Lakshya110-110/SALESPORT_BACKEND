@@ -34,19 +34,29 @@ import type { Meeting, Company, User as UserT, EnquiryListItem } from '@/lib/api
  * etc. Data still flows through the existing `/api/meetings/` endpoints.
  */
 
+/**
+ * One message, both channels.
+ *
+ * Email and WhatsApp used to have separate templates — a long formal email and
+ * a terse WhatsApp line — which meant the same meeting could go out described
+ * two different ways, and every edit had to be made twice or the two silently
+ * drifted apart. There is now a single message: what you type is what both
+ * receive, so it can't disagree with itself.
+ *
+ * Written to read correctly in a chat thread as well as an inbox: short lines,
+ * no letterhead sign-off, but still complete enough to stand alone as an email
+ * body. `name` is the consultant, so the recipient knows who it's from without
+ * a formal signature block.
+ */
 const CONSULTANT_DEFAULT_MESSAGE = (name: string) =>
   `Dear Sir/Madam,
 
 This confirms our meeting on [date] at [time] ([mode]) regarding [purpose].
 
-A calendar invite is attached for your convenience. Please let us know if you would like to reschedule or adjust the agenda — we are happy to accommodate.
+Please let us know if you would like to reschedule or adjust the agenda — we are happy to accommodate.
 
-Warm regards,
-${name}
-Sort String Solutions LLP`;
-
-const CONSULTANT_DEFAULT_WA = (name: string) =>
-  `Dear Sir/Madam, this confirms our meeting on [date] at [time] ([mode]). Please let us know if any changes are required. We look forward to connecting. — ${name}, Sort String Solutions`;
+Thank you,
+${name} · Sort String Solutions`;
 
 const RESCHEDULE_REASONS = [
   'Customer requested',
@@ -339,9 +349,10 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
   const [agenda, setAgenda] = useState('');
   const [emailOn, setEmailOn] = useState(true);
   const [emailSubject, setEmailSubject] = useState('');
-  const [emailBody, setEmailBody] = useState(CONSULTANT_DEFAULT_MESSAGE('Ravi Kumar'));
+  // Feeds BOTH channels — named for what it is, not for one of them.
+  const [messageBody, setMessageBody] = useState(CONSULTANT_DEFAULT_MESSAGE('Ravi Kumar'));
   const [waOn, setWaOn] = useState(false);
-  const [waBody, setWaBody] = useState(CONSULTANT_DEFAULT_WA('Ravi Kumar'));
+
 
   const companiesQ = useQuery({
     queryKey: ['companies', 'search-meeting', companyQuery],
@@ -365,14 +376,12 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
   // one — refs (not state) so flipping them doesn't itself retrigger this
   // effect. Reset in reset() below so a fresh open re-arms the auto-fill.
   const emailSubjectEdited = useRef(false);
-  const emailBodyEdited = useRef(false);
-  const waBodyEdited = useRef(false);
+  const messageEdited = useRef(false);
   useEffect(() => {
     if (!emailSubjectEdited.current) {
       setEmailSubject(`Meeting confirmation — ${enquiryLabel || companyQuery || 'meeting'} · Sort String Solutions`);
     }
-    if (!emailBodyEdited.current) setEmailBody(CONSULTANT_DEFAULT_MESSAGE(consultantName));
-    if (!waBodyEdited.current) setWaBody(CONSULTANT_DEFAULT_WA(consultantName));
+    if (!messageEdited.current) setMessageBody(CONSULTANT_DEFAULT_MESSAGE(consultantName));
   }, [consultantName, enquiryLabel, companyQuery]);
 
   const submit = useMutation({
@@ -441,8 +450,11 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
         notify_whatsapp: waOn,
         message: messageParts.join('\n\n'),
         email_subject: emailOn ? emailSubject : '',
-        email_body: emailOn ? emailBody : '',
-        whatsapp_message: waOn ? waBody : '',
+        // One message, both channels — see CONSULTANT_DEFAULT_MESSAGE. Each
+        // channel still only carries it if that channel is switched on, so the
+        // toggles keep meaning what they say.
+        email_body: emailOn ? messageBody : '',
+        whatsapp_message: waOn ? messageBody : '',
       } as unknown as Partial<Meeting> & { company: number; purpose: string; scheduled_at: string });
     },
     onSuccess: () => {
@@ -464,8 +476,7 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
     setLocation(''); setAttendees(''); setAgenda('');
     setEmailOn(true); setWaOn(false);
     emailSubjectEdited.current = false;
-    emailBodyEdited.current = false;
-    waBodyEdited.current = false;
+    messageEdited.current = false;
   };
 
   return (
@@ -694,38 +705,37 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
         </Field>
 
         <SwitchRow label="Send calendar invite & email to attendees" checked={emailOn} onChange={setEmailOn} />
-        {emailOn && (
+        <SwitchRow label="Send WhatsApp confirmation" checked={waOn} onChange={setWaOn} />
+
+        {/* One message for both channels. Shown whenever EITHER is on — two
+            boxes meant the same meeting could go out described two different
+            ways, and every edit had to be made twice or they drifted. */}
+        {(emailOn || waOn) && (
           <div className="space-y-3">
-            <Field label="Email subject">
-              <input
-                className={inputCls}
-                value={emailSubject}
-                onChange={(e) => { emailSubjectEdited.current = true; setEmailSubject(e.target.value); }}
-              />
-            </Field>
-            <Field label="Email message">
+            {emailOn && (
+              <Field label="Email subject">
+                <input
+                  className={inputCls}
+                  value={emailSubject}
+                  onChange={(e) => { emailSubjectEdited.current = true; setEmailSubject(e.target.value); }}
+                />
+              </Field>
+            )}
+            <Field label="Message">
               <textarea
                 rows={6}
-                value={emailBody}
-                onChange={(e) => { emailBodyEdited.current = true; setEmailBody(e.target.value); }}
+                value={messageBody}
+                onChange={(e) => { messageEdited.current = true; setMessageBody(e.target.value); }}
                 className={cn(inputCls, 'h-40 py-2 font-mono')}
               />
+              <span className="mt-1 block text-[11px] text-subtle">
+                {emailOn && waOn
+                  ? 'Sent as both the email body and the WhatsApp message.'
+                  : emailOn ? 'Sent as the email body.' : 'Sent as the WhatsApp message.'}
+              </span>
             </Field>
             <NotificationStatusNote />
           </div>
-        )}
-
-        <SwitchRow label="Send WhatsApp confirmation" checked={waOn} onChange={setWaOn} />
-        {waOn && (
-          <Field label="WhatsApp message">
-            <textarea
-              rows={3}
-              value={waBody}
-              onChange={(e) => { waBodyEdited.current = true; setWaBody(e.target.value); }}
-              className={cn(inputCls, 'h-24 py-2 font-mono')}
-            />
-            <NotificationStatusNote />
-          </Field>
         )}
 
         {submit.error && (
@@ -791,19 +801,17 @@ function RescheduleModal({
   const [emailOn, setEmailOn] = useState(true);
   const [waOn, setWaOn] = useState(false);
   const [subject, setSubject] = useState(`Request to reschedule — ${m.purpose}, ${m.company_name}`);
-  const [emailBody, setEmailBody] = useState(
+  // One message for both channels, same as the schedule modal — reads in a
+  // chat thread as well as an inbox, so it doesn't need a second version.
+  const [messageBody, setMessageBody] = useState(
 `Dear Sir/Madam,
 
-Thank you for your time. We would like to request a change to our scheduled ${m.purpose}. The proposed new time is [new date & time].
+We would like to request a change to our scheduled ${m.purpose}. The proposed new time is [new date & time].
 
 Kindly confirm if this is convenient, or share an alternative slot that suits you. We apologise for any inconvenience caused.
 
-Warm regards,
-${m.consultant_name ?? 'Sort String Solutions'}
-Sort String Solutions LLP`,
-  );
-  const [waBody, setWaBody] = useState(
-`Dear Sir/Madam, we would like to reschedule our ${m.purpose} to [new date & time]. Kindly confirm if this is convenient, or suggest a slot that suits you. Thank you. — ${m.consultant_name ?? 'Sort String Solutions'}`,
+Thank you,
+${m.consultant_name ?? 'Sort String Solutions'} · Sort String Solutions`,
   );
 
   const submit = useMutation({
@@ -819,8 +827,9 @@ Sort String Solutions LLP`,
         notify_email: emailOn,
         notify_whatsapp: waOn,
         email_subject: emailOn ? subject : '',
-        email_body: emailOn ? emailBody : '',
-        whatsapp_message: waOn ? waBody : '',
+        // Same text on both channels — see the schedule modal.
+        email_body: emailOn ? messageBody : '',
+        whatsapp_message: waOn ? messageBody : '',
       });
     },
     onSuccess: () => {
@@ -897,22 +906,29 @@ Sort String Solutions LLP`,
         <SwitchRow label="Notify attendees via email" checked={emailOn} onChange={setEmailOn} />
         <SwitchRow label="Notify attendees via WhatsApp" checked={waOn} onChange={setWaOn} />
 
-        {emailOn && (
+        {/* One message for both channels — see the schedule modal. */}
+        {(emailOn || waOn) && (
           <div className="space-y-3">
-            <Field label="Email subject">
-              <input className={inputCls} value={subject} onChange={(e) => setSubject(e.target.value)} />
-            </Field>
-            <Field label="Email message">
-              <textarea rows={6} value={emailBody} onChange={(e) => setEmailBody(e.target.value)} className={cn(inputCls, 'h-40 py-2 font-mono')} />
+            {emailOn && (
+              <Field label="Email subject">
+                <input className={inputCls} value={subject} onChange={(e) => setSubject(e.target.value)} />
+              </Field>
+            )}
+            <Field label="Message">
+              <textarea
+                rows={6}
+                value={messageBody}
+                onChange={(e) => setMessageBody(e.target.value)}
+                className={cn(inputCls, 'h-40 py-2 font-mono')}
+              />
+              <span className="mt-1 block text-[11px] text-subtle">
+                {emailOn && waOn
+                  ? 'Sent as both the email body and the WhatsApp message.'
+                  : emailOn ? 'Sent as the email body.' : 'Sent as the WhatsApp message.'}
+              </span>
             </Field>
             <NotificationStatusNote />
           </div>
-        )}
-        {waOn && (
-          <Field label="WhatsApp message">
-            <textarea rows={3} value={waBody} onChange={(e) => setWaBody(e.target.value)} className={cn(inputCls, 'h-24 py-2 font-mono')} />
-            <NotificationStatusNote />
-          </Field>
         )}
 
         {submit.error && (
