@@ -65,6 +65,19 @@ function toISODate(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/**
+ * Time-of-day greeting in the viewer's LOCAL time. `getHours()` is local (not
+ * UTC) on purpose — a UTC split would show the wrong greeting to IST users for
+ * the 5.5h the two clocks disagree (e.g. "Good morning" until 5:30pm IST).
+ * Boundaries: morning < 12:00, afternoon 12:00–16:59, evening 17:00 onwards.
+ */
+export function greeting(now: Date = new Date()): string {
+  const h = now.getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
 /** Start-of-period date (as a `date_from`-ready yyyy-mm-dd), mirroring the
  *  backend's `_period_start` bucket definitions exactly — 'today'/'week'/
  *  'month' produce the same window the /dashboard/ endpoint's own KPIs use,

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { useModals } from '@/components/shell/ModalHost';
 import { endpoints } from '@/lib/api/endpoints';
 import { session } from '@/lib/auth/session';
-import { periodStartISO } from '@/lib/utils/date';
+import { periodStartISO, greeting } from '@/lib/utils/date';
 import { KpiStrip } from '@/components/dashboard/KpiStrip';
 import { Reveal } from '@/components/ui/Reveal';
 import { ConversionFunnel } from '@/components/dashboard/ConversionFunnel';
@@ -108,7 +108,7 @@ export default function DashboardPage() {
   return (
     <>
       <SectionHeader
-        title={`Good morning, ${first}`}
+        title={`${greeting()}, ${first}`}
         subtitle="Your pipeline at a glance."
         actions={
           <Button leftIcon={<Plus size={15} />} onClick={() => modals.open('newEnquiry')}>
