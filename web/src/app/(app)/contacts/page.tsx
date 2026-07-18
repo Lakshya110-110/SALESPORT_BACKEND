@@ -3,7 +3,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { User, Plus, Mail, Phone, Star, Download } from 'lucide-react';
+import { User, Plus, Mail, Phone, Star, Download, Pencil, Trash2 } from 'lucide-react';
 import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -40,6 +40,8 @@ export default function ContactsPage() {
   const sp = useSearchParams();
   const search = sp.get('search') ?? '';
   const [newOpen, setNewOpen] = useState(false);
+  const [editing, setEditing] = useState<Contact | null>(null);
+  const [deleting, setDeleting] = useState<Contact | null>(null);
 
   const q = useQuery({
     queryKey: ['contacts', 'list', { search }],
@@ -106,6 +108,7 @@ export default function ContactsPage() {
                   <SortableTh label="Phone" sortKey="phone" activeKey={activeKey} dir={dir} onSort={onSort} />
                   <SortableTh label="Email" sortKey="email" activeKey={activeKey} dir={dir} onSort={onSort} />
                   <SortableTh className="hidden md:table-cell" label="Primary" sortKey="primary" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <Th className="w-[84px] text-right">Actions</Th>
                 </tr>
               </thead>
               <tbody>
@@ -124,7 +127,9 @@ export default function ContactsPage() {
                     </td>
                   </tr>
                 ) : (
-                  sorted.map((c) => <Row key={c.id} c={c} />)
+                  sorted.map((c) => (
+                    <Row key={c.id} c={c} onEdit={setEditing} onDelete={setDeleting} />
+                  ))
                 )}
               </tbody>
             </table>
@@ -133,11 +138,24 @@ export default function ContactsPage() {
       </div>
 
       <NewContactModal open={newOpen} onClose={() => setNewOpen(false)} />
+      {/* Same modal, edit mode. */}
+      <NewContactModal open={Boolean(editing)} onClose={() => setEditing(null)} contact={editing} />
+      {deleting && (
+        <DeleteContactModal c={deleting} open={Boolean(deleting)} onClose={() => setDeleting(null)} />
+      )}
     </>
   );
 }
 
-function Row({ c }: { c: Contact }) {
+function Row({
+  c,
+  onEdit,
+  onDelete,
+}: {
+  c: Contact;
+  onEdit: (c: Contact) => void;
+  onDelete: (c: Contact) => void;
+}) {
   return (
     <tr className="border-t border-b-subtle hover:bg-soft">
       <Td>
@@ -171,11 +189,43 @@ function Row({ c }: { c: Contact }) {
           </span>
         )}
       </Td>
+      <Td className="text-right">
+        <div className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            onClick={() => onEdit(c)}
+            aria-label={`Edit ${c.name}`}
+            title="Edit"
+            className="rounded-md p-1 text-subtle hover:bg-soft hover:text-text"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => onDelete(c)}
+            aria-label={`Delete ${c.name}`}
+            title="Delete"
+            className="rounded-md p-1 text-subtle hover:bg-danger-soft hover:text-danger"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      </Td>
     </tr>
   );
 }
 
-function NewContactModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+/** Serves both New and Edit — pass `contact` to edit it. */
+function NewContactModal({
+  open,
+  onClose,
+  contact = null,
+}: {
+  open: boolean;
+  onClose: () => void;
+  contact?: Contact | null;
+}) {
+  const isEdit = Boolean(contact);
   const [name, setName] = useState('');
   const [companyId, setCompanyId] = useState<number | null>(null);
   const [companyQ, setCompanyQ] = useState('');
@@ -196,17 +246,35 @@ function NewContactModal({ open, onClose }: { open: boolean; onClose: () => void
     setPhone(''); setEmail(''); setIsPrimary(false);
   };
 
+  // Refill on open, keyed on the row so a different contact doesn't inherit
+  // the previous one's details. companyQ is seeded with the company name so
+  // the typeahead shows what's currently linked instead of looking empty.
+  useEffect(() => {
+    if (!open) return;
+    setName(contact?.name ?? '');
+    setCompanyId(contact?.company ?? null);
+    setCompanyQ(contact?.company_name ?? '');
+    setDesignation(contact?.designation ?? '');
+    setPhone(contact?.phone ?? '');
+    setEmail(contact?.email ?? '');
+    setIsPrimary(Boolean(contact?.is_primary));
+  }, [open, contact?.id, contact?.name, contact?.company, contact?.company_name,
+      contact?.designation, contact?.phone, contact?.email, contact?.is_primary]);
+
   const submit = useMutation({
     mutationFn: () => {
       if (!companyId) throw new Error('Pick a company.');
-      return endpoints.contacts.create({
+      const payload = {
         company: companyId,
         name: name.trim(),
         designation: designation.trim(),
         phone: phone.trim(),
         email: email.trim(),
         is_primary: isPrimary,
-      });
+      };
+      return isEdit && contact
+        ? endpoints.contacts.patch(contact.id, payload)
+        : endpoints.contacts.create(payload);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['contacts'] });
@@ -219,7 +287,7 @@ function NewContactModal({ open, onClose }: { open: boolean; onClose: () => void
     <Modal
       open={open}
       onClose={() => { reset(); onClose(); }}
-      title="New contact"
+      title={isEdit ? `Edit ${contact?.name ?? "contact"}` : "New contact"}
       size="md"
       footer={
         <>
@@ -336,4 +404,62 @@ function Th({ children, className }: { children: React.ReactNode; className?: st
 }
 function Td({ children, className }: { children: React.ReactNode; className?: string }) {
   return <td className={cn('px-4 py-3 align-middle', className)}>{children}</td>;
+}
+
+/**
+ * Contact delete. Safe by comparison to a company: Enquiry.contact is SET_NULL,
+ * so their enquiries survive and are simply left without a named contact.
+ */
+function DeleteContactModal({
+  c,
+  open,
+  onClose,
+}: {
+  c: Contact;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const remove = useMutation({
+    mutationFn: () => endpoints.contacts.remove(c.id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['contacts'] });
+      qc.invalidateQueries({ queryKey: ['companies'] });
+      qc.invalidateQueries({ queryKey: ['enquiries'] });
+      onClose();
+    },
+  });
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Delete contact"
+      size="sm"
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button type="button" variant="danger" loading={remove.isPending} onClick={() => remove.mutate()}>
+            Delete
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3 text-[13px] text-text">
+        <p>
+          Delete <span className="font-semibold">{c.name}</span>
+          {c.company_name ? <> from <span className="font-semibold">{c.company_name}</span></> : null}?
+        </p>
+        <p className="text-[12px] text-subtle">
+          Any enquiries naming them are kept &mdash; they just lose the contact person.
+          This can&rsquo;t be undone.
+        </p>
+        {remove.error && (
+          <div className="rounded-md bg-danger-soft p-2 text-[12px] text-danger">
+            {(remove.error as Error).message}
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
 }

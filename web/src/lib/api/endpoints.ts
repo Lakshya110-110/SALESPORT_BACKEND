@@ -114,12 +114,21 @@ export const endpoints = {
     list: (params?: { industry?: string; search?: string; page_size?: number }) =>
       api.get<Paginated<Company>>('/companies/', params),
     create: (data: Partial<Company> & { name: string }) => api.post<Company>('/companies/', data),
+    patch: (id: number, data: Partial<Company>) => api.patch<Company>(`/companies/${id}/`, data),
+    /** 400 with a `detail` message if the company still has enquiries or
+     *  meetings — those cascade, so the server refuses rather than take the
+     *  pipeline down with it. Console roles only. */
+    remove: (id: number) => api.delete<void>(`/companies/${id}/`),
   },
   contacts: {
     list: (params?: { company?: number | string; search?: string; page_size?: number }) =>
       api.get<Paginated<Contact>>('/contacts/', params),
     create: (data: Partial<Contact> & { company: number; name: string }) =>
       api.post<Contact>('/contacts/', data),
+    patch: (id: number, data: Partial<Contact>) => api.patch<Contact>(`/contacts/${id}/`, data),
+    /** Safe: Enquiry.contact is SET_NULL, so their enquiries are unlinked
+     *  rather than deleted. Console roles only. */
+    remove: (id: number) => api.delete<void>(`/contacts/${id}/`),
   },
 
   // ----- Meetings -----

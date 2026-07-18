@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Trash2, Download } from 'lucide-react';
+import { Plus, Trash2, Download, Pencil } from 'lucide-react';
 import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -123,6 +123,7 @@ function CategoryTable({
     queryFn: () => endpoints.masterData(category),
   });
   const qc = useQueryClient();
+  const [editing, setEditing] = useState<MasterDataItem | null>(null);
 
   const del = useMutation({
     mutationFn: (id: number) => endpoints.masterDataWrite.delete(id),
@@ -170,16 +171,27 @@ function CategoryTable({
               <Td className="text-right font-mono tabular-nums text-subtle">{m.order}</Td>
               {canEdit && (
                 <Td className="text-right">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (confirm(`Remove "${m.value}"?`)) del.mutate(m.id);
-                    }}
-                    aria-label="Delete"
-                    className="rounded-md p-1 text-subtle hover:bg-danger-soft hover:text-danger"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(m)}
+                      aria-label={`Edit ${m.value}`}
+                      title="Edit"
+                      className="rounded-md p-1 text-subtle hover:bg-soft hover:text-text"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm(`Remove "${m.value}"?`)) del.mutate(m.id);
+                      }}
+                      aria-label="Delete"
+                      className="rounded-md p-1 text-subtle hover:bg-danger-soft hover:text-danger"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </Td>
               )}
             </tr>
@@ -187,22 +199,42 @@ function CategoryTable({
         )}
       </tbody>
     </table>
+    {/* Edit reuses the same modal as Add — `item` switches it into edit mode. */}
+    <AddModal
+      open={Boolean(editing)}
+      onClose={() => setEditing(null)}
+      category={category}
+      item={editing}
+    />
     </div>
   );
 }
 
+/** Serves both Add and Edit: pass `item` to edit it, omit to create a new one.
+ *  One form rather than two near-identical ones, so the fields can't drift. */
 function AddModal({
   open,
   onClose,
   category,
+  item = null,
 }: {
   open: boolean;
   onClose: () => void;
   category: MasterDataItem['category'];
+  item?: MasterDataItem | null;
 }) {
   const [value, setValue] = useState('');
   const [order, setOrder] = useState('0');
   const qc = useQueryClient();
+  const isEdit = Boolean(item);
+
+  // Load the row being edited each time the modal opens. Keyed on item.id as
+  // well as `open` so clicking edit on a different row refills the form.
+  useEffect(() => {
+    if (!open) return;
+    setValue(item?.value ?? '');
+    setOrder(String(item?.order ?? 0));
+  }, [open, item?.id, item?.value, item?.order]);
 
   const reset = () => {
     setValue(''); setOrder('0');
@@ -210,7 +242,13 @@ function AddModal({
 
   const submit = useMutation({
     mutationFn: () =>
-      endpoints.masterDataWrite.create({
+      isEdit && item
+        ? endpoints.masterDataWrite.patch(item.id, {
+            value: value.trim(),
+            label: value.trim(),
+            order: Number(order) || 0,
+          })
+        : endpoints.masterDataWrite.create({
         category,
         value: value.trim(),
         // MasterData.label is non-null in the model but nothing reads it —
@@ -232,7 +270,7 @@ function AddModal({
     <Modal
       open={open}
       onClose={() => { reset(); onClose(); }}
-      title={`Add ${category.replace('_', ' ')}`}
+      title={`${isEdit ? 'Edit' : 'Add'} ${category.replace('_', ' ')}`}
       size="sm"
       footer={
         <>
@@ -243,7 +281,7 @@ function AddModal({
             loading={submit.isPending}
             disabled={!value.trim()}
           >
-            Add
+            {isEdit ? 'Save' : 'Add'}
           </Button>
         </>
       }

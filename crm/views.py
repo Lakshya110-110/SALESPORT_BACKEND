@@ -134,6 +134,14 @@ class MasterDataViewSet(viewsets.ModelViewSet):
     serializer_class = MasterDataSerializer
     search_fields = ["value", "label"]
 
+    def get_permissions(self):
+        # Master data drives every dropdown in the app, so a bad edit here is
+        # felt everywhere. Reads stay open — the Android app populates its own
+        # pickers from this — but writes are console-only.
+        if self.action in ("create", "update", "partial_update", "destroy"):
+            return [permissions.IsAuthenticated(), IsConsoleUser()]
+        return super().get_permissions()
+
     def get_queryset(self):
         qs = super().get_queryset()
         cat = self.request.query_params.get("category")
@@ -186,6 +194,50 @@ class CompanyViewSet(viewsets.ModelViewSet):
     serializer_class = CompanySerializer
     search_fields = ["name", "gstin", "city", "industry"]
 
+    def get_permissions(self):
+        # Editing and deleting reference data is console-only. Reads stay open to
+        # any authenticated user because the Android app needs the company list
+        # to create enquiries.
+        if self.action in ("update", "partial_update", "destroy"):
+            return [permissions.IsAuthenticated(), IsConsoleUser()]
+        return super().get_permissions()
+
+    def destroy(self, request, *args, **kwargs):
+        """Refuse to delete a company that still has enquiries.
+
+        Enquiry.company, Contact.company and Meeting.company are all CASCADE, so
+        deleting a company with leads attached silently takes the entire pipeline
+        for that account with it — a click meant to tidy up a duplicate would
+        destroy months of work with no warning and no undo. Whoever wants it gone
+        has to deal with the enquiries first, which forces the decision to be
+        deliberate rather than a side effect.
+
+        Contacts are not a blocker: they belong to the company and mean nothing
+        without it, so they go quietly."""
+        company = self.get_object()
+        enquiry_count = Enquiry.objects.filter(company=company).count()
+        if enquiry_count:
+            return Response(
+                {"detail": (
+                    f"{company.name} still has {enquiry_count} "
+                    f"{'enquiry' if enquiry_count == 1 else 'enquiries'}. "
+                    "Deleting it would delete them and their meetings too. "
+                    "Delete or reassign the enquiries first."
+                )},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        meetings = Meeting.objects.filter(company=company).count()
+        if meetings:
+            return Response(
+                {"detail": (
+                    f"{company.name} still has {meetings} "
+                    f"{'meeting' if meetings == 1 else 'meetings'}. "
+                    "Delete those first."
+                )},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().destroy(request, *args, **kwargs)
+
     def get_queryset(self):
         qs = super().get_queryset()
         ind = self.request.query_params.get("industry")
@@ -196,6 +248,15 @@ class ContactViewSet(viewsets.ModelViewSet):
     queryset = Contact.objects.select_related("company").all()
     serializer_class = ContactSerializer
     search_fields = ["name", "phone", "email", "company__name"]
+
+    def get_permissions(self):
+        # Same split as CompanyViewSet: reads open, writes console-only.
+        if self.action in ("update", "partial_update", "destroy"):
+            return [permissions.IsAuthenticated(), IsConsoleUser()]
+        return super().get_permissions()
+
+    # No destroy override needed: Enquiry.contact is SET_NULL, so deleting a
+    # contact unlinks their enquiries rather than destroying them.
 
     def get_queryset(self):
         qs = super().get_queryset()

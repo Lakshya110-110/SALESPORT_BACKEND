@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect, type FormEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Building2, Plus, Users, Download } from 'lucide-react';
+import { Building2, Plus, Users, Download, Pencil, Trash2 } from 'lucide-react';
 import { SectionHeader } from '@/components/shell/SectionHeader';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -49,6 +49,8 @@ export default function CompaniesPage() {
   const industry = sp.get('industry') ?? '';
   const search = sp.get('search') ?? '';
   const [newOpen, setNewOpen] = useState(false);
+  const [editing, setEditing] = useState<Company | null>(null);
+  const [deleting, setDeleting] = useState<Company | null>(null);
 
   const q = useQuery({
     queryKey: ['companies', 'list', { industry, search }],
@@ -125,6 +127,7 @@ export default function CompaniesPage() {
                   <SortableTh className="hidden md:table-cell" label="City" sortKey="city" activeKey={activeKey} dir={dir} onSort={onSort} />
                   <SortableTh className="hidden lg:table-cell" label="GSTIN" sortKey="gstin" activeKey={activeKey} dir={dir} onSort={onSort} />
                   <SortableTh label="Contacts" sortKey="contacts" align="right" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <Th className="w-[84px] text-right">Actions</Th>
                 </tr>
               </thead>
               <tbody>
@@ -141,7 +144,9 @@ export default function CompaniesPage() {
                     </td>
                   </tr>
                 ) : (
-                  sorted.map((c) => <Row key={c.id} c={c} />)
+                  sorted.map((c) => (
+                    <Row key={c.id} c={c} onEdit={setEditing} onDelete={setDeleting} />
+                  ))
                 )}
               </tbody>
             </table>
@@ -150,11 +155,28 @@ export default function CompaniesPage() {
       </div>
 
       <NewCompanyModal open={newOpen} onClose={() => setNewOpen(false)} />
+      {/* Same modal, edit mode. */}
+      <NewCompanyModal open={Boolean(editing)} onClose={() => setEditing(null)} company={editing} />
+      {deleting && (
+        <DeleteCompanyModal
+          c={deleting}
+          open={Boolean(deleting)}
+          onClose={() => setDeleting(null)}
+        />
+      )}
     </>
   );
 }
 
-function Row({ c }: { c: Company }) {
+function Row({
+  c,
+  onEdit,
+  onDelete,
+}: {
+  c: Company;
+  onEdit: (c: Company) => void;
+  onDelete: (c: Company) => void;
+}) {
   return (
     <tr className="sp-row-hover border-t border-b-subtle hover:bg-soft">
       <Td>
@@ -179,6 +201,29 @@ function Row({ c }: { c: Company }) {
           <Users size={10} />
           {c.contact_count}
         </span>
+      </Td>
+
+      <Td className="text-right">
+        <div className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(c); }}
+            aria-label={`Edit ${c.name}`}
+            title="Edit"
+            className="rounded-md p-1 text-subtle hover:bg-soft hover:text-text"
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(c); }}
+            aria-label={`Delete ${c.name}`}
+            title="Delete"
+            className="rounded-md p-1 text-subtle hover:bg-danger-soft hover:text-danger"
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </Td>
     </tr>
   );
@@ -227,7 +272,17 @@ function ChipBtn({
   );
 }
 
-function NewCompanyModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+/** Serves both New and Edit — pass `company` to edit it. One form rather than
+ *  two near-identical ones, so the fields can't drift apart. */
+function NewCompanyModal({
+  open,
+  onClose,
+  company = null,
+}: {
+  open: boolean;
+  onClose: () => void;
+  company?: Company | null;
+}) {
   const industries = useMasterDataValues('industry', INDUSTRIES_FALLBACK);
   const [name, setName] = useState('');
   const [industry, setIndustry] = useState('Dairy');
@@ -235,20 +290,40 @@ function NewCompanyModal({ open, onClose }: { open: boolean; onClose: () => void
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
   const qc = useQueryClient();
+  const isEdit = Boolean(company);
   const reset = () => {
     setName(''); setIndustry('Dairy'); setGstin(''); setPhone(''); setCity('');
   };
+
+  // Refill whenever the modal opens, keyed on the row so opening a different
+  // company doesn't show the previous one's details.
+  useEffect(() => {
+    if (!open) return;
+    setName(company?.name ?? '');
+    setIndustry(company?.industry || 'Dairy');
+    setGstin(company?.gstin ?? '');
+    setPhone(company?.phone ?? '');
+    setCity(company?.city ?? '');
+  }, [open, company?.id, company?.name, company?.industry, company?.gstin, company?.phone, company?.city]);
+
   const submit = useMutation({
-    mutationFn: () =>
-      endpoints.companies.create({
+    mutationFn: () => {
+      const payload = {
         name: name.trim(),
         industry,
         gstin: gstin.trim(),
         phone: phone.trim(),
         city: city.trim(),
-      }),
+      };
+      return isEdit && company
+        ? endpoints.companies.patch(company.id, payload)
+        : endpoints.companies.create(payload);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['companies'] });
+      // A renamed company shows up on enquiry rows and the dashboard too.
+      qc.invalidateQueries({ queryKey: ['enquiries'] });
+      qc.invalidateQueries({ queryKey: ['contacts'] });
       reset();
       onClose();
     },
@@ -257,7 +332,7 @@ function NewCompanyModal({ open, onClose }: { open: boolean; onClose: () => void
     <Modal
       open={open}
       onClose={() => { reset(); onClose(); }}
-      title="New company"
+      title={isEdit ? `Edit ${company?.name ?? "company"}` : "New company"}
       size="md"
       footer={
         <>
@@ -358,5 +433,63 @@ function SkelRows({ n, cols }: { n: number; cols: number }) {
         </tr>
       ))}
     </>
+  );
+}
+
+/**
+ * Company delete. The server refuses (400) when the company still has enquiries
+ * or meetings, because Enquiry.company and Meeting.company are CASCADE — a
+ * click meant to tidy a duplicate would otherwise take the whole account's
+ * pipeline with it. That refusal is surfaced verbatim rather than translated,
+ * since it already names the counts.
+ */
+function DeleteCompanyModal({
+  c,
+  open,
+  onClose,
+}: {
+  c: Company;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const remove = useMutation({
+    mutationFn: () => endpoints.companies.remove(c.id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['companies'] });
+      qc.invalidateQueries({ queryKey: ['contacts'] });
+      onClose();
+    },
+  });
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Delete company"
+      size="sm"
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button type="button" variant="danger" loading={remove.isPending} onClick={() => remove.mutate()}>
+            Delete
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3 text-[13px] text-text">
+        <p>Delete <span className="font-semibold">{c.name}</span>?</p>
+        <p className="text-[12px] text-subtle">
+          Its contacts are deleted too. If it still has any enquiries or meetings this
+          will be refused &mdash; delete or reassign those first, so a company can never
+          take a live pipeline down with it.
+        </p>
+        {remove.error && (
+          <div className="rounded-md bg-danger-soft p-2 text-[12px] text-danger">
+            {(remove.error as Error).message}
+          </div>
+        )}
+      </div>
+    </Modal>
   );
 }
