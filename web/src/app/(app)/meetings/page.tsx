@@ -335,6 +335,7 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
   const [enquiryQuery, setEnquiryQuery] = useState('');
   // 'potential' path
   const [prospectContact, setProspectContact] = useState('');
+  const [prospectDesignation, setProspectDesignation] = useState('');
   const [prospectPhone, setProspectPhone] = useState('');
   const [purpose, setPurpose] = useState('Product demo');
   const [mode, setMode] = useState<Meeting['mode']>('In-person');
@@ -419,6 +420,7 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
             await endpoints.contacts.create({
               company: resolvedCompanyId,
               name: prospectContact.trim(),
+              designation: prospectDesignation.trim(),
               phone: prospectPhone.replace(/\D/g, '').slice(-10),
               is_primary: true,
             } as never);
@@ -468,7 +470,8 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
   const reset = () => {
     setSource(null);
     setEnquiryId(null); setEnquiryQuery('');
-    setProspectContact(''); setProspectPhone('');
+    setProspectContact('');
+    setProspectDesignation(''); setProspectPhone('');
     setCompanyId(null); setCompanyQuery(''); setEnquiryLabel('');
     setPurpose('Product demo'); setMode('In-person');
     setDateStr(''); setTimeStr('10:00'); setDuration('60'); setReminder('60');
@@ -596,6 +599,14 @@ function NewMeetingModal({ open, onClose }: { open: boolean; onClose: () => void
                   placeholder="Full name"
                   value={prospectContact}
                   onChange={(e) => setProspectContact(e.target.value)}
+                />
+              </Field>
+              <Field label="Designation">
+                <input
+                  className={inputCls}
+                  placeholder="e.g. Purchase Head"
+                  value={prospectDesignation}
+                  onChange={(e) => setProspectDesignation(e.target.value)}
                 />
               </Field>
               <Field label="Phone" required>

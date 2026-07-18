@@ -39,6 +39,7 @@ const SOURCES_FALLBACK = ['Referral', 'Website', 'Cold call', 'Exhibition', 'Par
 type State = {
   company: string;
   contact: string;
+  designation: string;
   phone: string;
   email: string;
   industry: string;
@@ -50,6 +51,7 @@ type State = {
 const initial: State = {
   company: '',
   contact: '',
+  designation: '',
   phone: '+91 ',
   email: '',
   industry: 'Dairy',
@@ -117,6 +119,7 @@ export function NewEnquiryModal({
         const c = await endpoints.contacts.create({
           company: company.id,
           name: f.contact.trim(),
+          designation: f.designation.trim(),
           phone: f.phone.replace(/\D/g, '').slice(-10),
           email: f.email.trim(),
           is_primary: true,
@@ -219,6 +222,17 @@ export function NewEnquiryModal({
               value={f.contact}
               onChange={(e) => set('contact', e.target.value)}
               placeholder="Full name"
+              className={inputCls}
+            />
+          </Field>
+          {/* Optional, and sits right after the name because it qualifies it.
+              Without this the contact created here started with a blank
+              designation, so the enquiry list and detail had nothing to show. */}
+          <Field label="Designation">
+            <input
+              value={f.designation}
+              onChange={(e) => set('designation', e.target.value)}
+              placeholder="e.g. Purchase Head"
               className={inputCls}
             />
           </Field>
