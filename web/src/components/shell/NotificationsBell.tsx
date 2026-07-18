@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { Bell, Users, AlertCircle, FileText, Calendar, CheckCircle2, Info, Award, type LucideIcon } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { timeAgo } from '@/lib/utils/format';
 import { endpoints } from '@/lib/api/endpoints';
 import type { Notification } from '@/lib/api/types';
+import { iconForType } from './notificationIcon';
 
 /**
  * NotificationsBell — matches the uploaded HTML `.notif` popover.
@@ -166,31 +167,3 @@ function NotifItem({ n }: { n: Notification }) {
   );
 }
 
-/* Must be lucide's own LucideIcon. A ComponentType declared with narrower props
-   isn't assignable from lucide's forwardRef icons, so hand-rolling this alias
-   breaks `next build` while `next dev` (which skips typecheck) stays green. */
-type IconTone = [LucideIcon, string];
-
-function iconForType(t: Notification['ntype']): IconTone {
-  switch (t) {
-    case 'pending_approval':
-      return [Info, 'bg-info-soft text-info'];
-    case 'discrepancy':
-      return [AlertCircle, 'bg-warning-soft text-warning'];
-    case 'new_enquiry':
-      return [Users, 'bg-info-soft text-info'];
-    case 'overdue':
-      return [AlertCircle, 'bg-danger-soft text-danger'];
-    case 'proposal_opened':
-      return [FileText, 'bg-success-soft text-success'];
-    case 'meeting_reminder':
-      return [Calendar, 'bg-warning-soft text-warning'];
-    case 'deal_won':
-      return [Award, 'bg-success-soft text-success'];
-    case 'status_changed':
-      return [CheckCircle2, 'bg-primary-soft text-primary'];
-    case 'team_update':
-    default:
-      return [Users, 'bg-accent-soft text-accent'];
-  }
-}

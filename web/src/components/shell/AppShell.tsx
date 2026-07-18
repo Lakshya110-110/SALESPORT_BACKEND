@@ -9,7 +9,16 @@ import { KeyboardShortcuts } from './KeyboardShortcuts';
 import { session } from '@/lib/auth/session';
 import { getSocket, disconnectSocket } from '@/lib/socket';
 import { cn } from '@/lib/utils/cn';
-import type { EnquiryDetail, Touchpoint, NegotiationRound, Meeting, Proposal } from '@/lib/api/types';
+import { ToastViewport } from './ToastViewport';
+import { pushToast } from '@/lib/utils/toast';
+import type {
+  EnquiryDetail,
+  Touchpoint,
+  NegotiationRound,
+  Meeting,
+  Proposal,
+  Notification,
+} from '@/lib/api/types';
 
 /** Merges into an enquiry detail's cached query if (and only if) that
  * enquiry happens to be cached — e.g. someone has its detail page open
@@ -56,7 +65,15 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (!ready) return;
     const socket = getSocket();
     if (!socket) return;
-    const onNotification = () => qc.invalidateQueries({ queryKey: ['notifications'] });
+    // The server sends the fully serialized notification (crm/sockets.py's
+    // emit_notification). Toast it, then still invalidate so the bell's list
+    // and unread dot come from the server rather than this payload.
+    // Guarded: an older/misbehaving emitter sending no body must not throw
+    // inside the socket handler and take down every other listener with it.
+    const onNotification = (payload?: Notification) => {
+      if (payload?.id) pushToast(payload);
+      qc.invalidateQueries({ queryKey: ['notifications'] });
+    };
     const onEnquiryUpdated = () => {
       qc.invalidateQueries({ queryKey: ['enquiries'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
@@ -180,6 +197,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
       <KeyboardShortcuts />
+      <ToastViewport />
     </ModalHost>
   );
 }

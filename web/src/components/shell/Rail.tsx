@@ -11,6 +11,7 @@ import {
 import { cn } from '@/lib/utils/cn';
 import { session } from '@/lib/auth/session';
 import { disconnectSocket } from '@/lib/socket';
+import { clearToasts } from '@/lib/utils/toast';
 
 /**
  * Rail — a 1:1 port of the mockup's `.rail`.
@@ -110,6 +111,7 @@ export function Rail() {
 
   const logout = () => {
     disconnectSocket();
+    clearToasts();
     session.clear();
     window.location.assign('/login');
   };
