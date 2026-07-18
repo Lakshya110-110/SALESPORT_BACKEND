@@ -114,13 +114,16 @@ export default function CompaniesPage() {
           </div>
 
           <div className="sp-scroll overflow-auto" style={{ maxHeight: 'calc(100dvh - 190px)' }}>
-            <table className="w-full min-w-[720px] text-[12.5px]">
+            {/* Columns drop by priority as the window narrows so the table stops
+                      forcing a sideways scroll — GSTIN first (longest, least
+                      scannable), then City. Each hidden th has a matching td. */}
+                  <table className="w-full min-w-0 text-[12.5px] md:min-w-[520px] lg:min-w-[720px]">
               <thead>
                 <tr className="border-b border-b-default bg-sunken">
                   <SortableTh label="Company" sortKey="name" activeKey={activeKey} dir={dir} onSort={onSort} />
                   <SortableTh label="Industry" sortKey="industry" activeKey={activeKey} dir={dir} onSort={onSort} />
-                  <SortableTh label="City" sortKey="city" activeKey={activeKey} dir={dir} onSort={onSort} />
-                  <SortableTh label="GSTIN" sortKey="gstin" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh className="hidden md:table-cell" label="City" sortKey="city" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh className="hidden lg:table-cell" label="GSTIN" sortKey="gstin" activeKey={activeKey} dir={dir} onSort={onSort} />
                   <SortableTh label="Contacts" sortKey="contacts" align="right" activeKey={activeKey} dir={dir} onSort={onSort} />
                 </tr>
               </thead>
@@ -169,8 +172,8 @@ function Row({ c }: { c: Company }) {
         </Link>
       </Td>
       <Td>{c.industry}</Td>
-      <Td>{c.city || '—'}</Td>
-      <Td>{c.gstin ? <span className="font-mono tabular-nums">{c.gstin}</span> : '—'}</Td>
+      <Td className="hidden md:table-cell">{c.city || '—'}</Td>
+      <Td className="hidden lg:table-cell">{c.gstin ? <span className="font-mono tabular-nums">{c.gstin}</span> : '—'}</Td>
       <Td className="text-right">
         <span className="inline-flex items-center gap-1 rounded-sm bg-soft px-1.5 py-0.5 font-mono tabular-nums text-[11px] text-muted">
           <Users size={10} />

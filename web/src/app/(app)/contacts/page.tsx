@@ -93,15 +93,19 @@ export default function ContactsPage() {
           </div>
 
           <div className="sp-scroll overflow-auto" style={{ maxHeight: 'calc(100dvh - 190px)' }}>
-            <table className="w-full min-w-[720px] text-[12.5px]">
+            {/* Columns drop by priority as the window narrows. Name, Company,
+                      Phone and Email are the point of this page, so Designation
+                      and the Primary flag go first. Each hidden th has a
+                      matching td — miss one and the body shifts off by one. */}
+                  <table className="w-full min-w-0 text-[12.5px] md:min-w-[560px] lg:min-w-[720px]">
               <thead>
                 <tr className="border-b border-b-default bg-sunken">
                   <SortableTh label="Name" sortKey="name" activeKey={activeKey} dir={dir} onSort={onSort} />
                   <SortableTh label="Company" sortKey="company" activeKey={activeKey} dir={dir} onSort={onSort} />
-                  <SortableTh label="Designation" sortKey="designation" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh className="hidden lg:table-cell" label="Designation" sortKey="designation" activeKey={activeKey} dir={dir} onSort={onSort} />
                   <SortableTh label="Phone" sortKey="phone" activeKey={activeKey} dir={dir} onSort={onSort} />
                   <SortableTh label="Email" sortKey="email" activeKey={activeKey} dir={dir} onSort={onSort} />
-                  <SortableTh label="Primary" sortKey="primary" activeKey={activeKey} dir={dir} onSort={onSort} />
+                  <SortableTh className="hidden md:table-cell" label="Primary" sortKey="primary" activeKey={activeKey} dir={dir} onSort={onSort} />
                 </tr>
               </thead>
               <tbody>
@@ -145,7 +149,7 @@ function Row({ c }: { c: Contact }) {
         </div>
       </Td>
       <Td>{c.company_name}</Td>
-      <Td>{c.designation || '—'}</Td>
+      <Td className="hidden lg:table-cell">{c.designation || '—'}</Td>
       <Td>
         {c.phone ? (
           <a href={`tel:${c.phone}`} className="inline-flex items-center gap-1 font-mono tabular-nums text-primary hover:underline">
@@ -160,7 +164,7 @@ function Row({ c }: { c: Contact }) {
           </a>
         ) : '—'}
       </Td>
-      <Td>
+      <Td className="hidden md:table-cell">
         {c.is_primary && (
           <span className="inline-flex items-center gap-1 rounded-sm bg-warning-soft px-1.5 py-0.5 text-[10.5px] font-semibold text-warning">
             <Star size={10} /> Primary

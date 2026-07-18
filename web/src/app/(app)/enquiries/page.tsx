@@ -312,7 +312,27 @@ export default function EnquiriesPage() {
             className="sp-scroll overflow-auto"
             style={{ maxHeight: 'calc(100dvh - 260px)' }}
           >
-            <table className="w-full min-w-[1200px] text-[12.5px]">
+            {/* COLUMN PRIORITY — the table used to be a flat min-w-[1200px], so
+                in a half-screen window (measured at 820px viewport) 547px of it
+                sat off-screen and every row had to be read by scrolling
+                sideways. Columns now drop by priority as the viewport narrows,
+                and the min-width steps down with them so what remains fits.
+
+                  always      checkbox · Enquiry ID · Company · Status · actions
+                  md+ (768)   + Contact person, Last activity
+                  lg+ (1024)  + Enquiry type
+                  xl+ (1280)  + Contact details, Enquiry source
+
+                Contact details and source go first: they're the widest and are
+                both on the enquiry's own page, so nothing is truly lost. Every
+                hidden th has a matching td with the SAME classes — miss one and
+                the column headers silently shift off by one against the body. */}
+            {/* Each min-width is set just UNDER the space actually available at
+                that breakpoint (viewport − rail 94px − shell padding 28px −
+                scrollbar), so the visible columns fill the width without
+                tipping back into a horizontal scroll. Measured, not guessed:
+                at 1280 the old flat 1200px still overflowed by 95px. */}
+            <table className="w-full min-w-0 text-[12.5px] md:min-w-[600px] lg:min-w-[820px] xl:min-w-[1090px]">
               <thead>
                 <tr>
                   <Th style={{ width: 42 }}>
@@ -330,17 +350,20 @@ export default function EnquiriesPage() {
                     onSort={(o) => setParam({ ordering: o })}
                   />
                   <SortableTh
+                    className="hidden md:table-cell"
                     label="Contact person" ordering={ordering} field="contact__name"
                     onSort={(o) => setParam({ ordering: o })}
                   />
-                  <Th>Contact details</Th>
+                  <Th className="hidden xl:table-cell">Contact details</Th>
                   <SortableTh
+                    className="hidden xl:table-cell"
                     label="Enquiry source" ordering={ordering} field="source"
                     onSort={(o) => setParam({ ordering: o })}
                   />
                   {/* Type derives from expected close date, so the sort
                       proxies through that column. */}
                   <SortableTh
+                    className="hidden lg:table-cell"
                     label="Enquiry type" ordering={ordering} field="expected_close_date"
                     onSort={(o) => setParam({ ordering: o })}
                   />
@@ -349,6 +372,7 @@ export default function EnquiriesPage() {
                     onSort={(o) => setParam({ ordering: o })}
                   />
                   <SortableTh
+                    className="hidden md:table-cell"
                     label="Last activity" ordering={ordering} field="updated_at"
                     onSort={(o) => setParam({ ordering: o })}
                   />
@@ -488,8 +512,8 @@ function Row({
           <IndustryBadge industry={e.industry} />
         </div>
       </Td>
-      <Td>{e.contact_name ?? '—'}</Td>
-      <Td>
+      <Td className="hidden md:table-cell">{e.contact_name ?? '—'}</Td>
+      <Td className="hidden xl:table-cell">
         <div className="flex flex-col gap-[3px] whitespace-nowrap text-[12px] text-muted">
           {e.phone && (
             <CopyLine icon={<PhoneIcon size={13} className="text-subtle" strokeWidth={1.8} />} value={fmtPhone(e.phone)} />
@@ -500,14 +524,14 @@ function Row({
           {!e.phone && !e.email && <span className="text-subtle">—</span>}
         </div>
       </Td>
-      <Td>{e.source}</Td>
-      <Td>
+      <Td className="hidden xl:table-cell">{e.source}</Td>
+      <Td className="hidden lg:table-cell">
         <PriPill t={e.derived_type} />
       </Td>
       <Td>
         <StatusBadge s={e.status} />
       </Td>
-      <Td className="whitespace-nowrap">
+      <Td className="hidden whitespace-nowrap md:table-cell">
         <div className="flex items-center gap-2">
           {e.owner_name && (
             <span
@@ -662,11 +686,14 @@ function SortableTh({
   ordering,
   field,
   onSort,
+  className,
 }: {
   label: string;
   ordering: string;
   field: string;
   onSort: (next: string) => void;
+  /** Responsive visibility — see COLUMN PRIORITY on the <table>. */
+  className?: string;
 }) {
   const activeField = ordering.replace('-', '');
   const active = activeField === field;
@@ -683,6 +710,7 @@ function SortableTh({
         active
           ? 'bg-primary-soft text-primary'
           : 'bg-sunken text-subtle hover:text-text',
+        className,
       )}
     >
       <span className="inline-flex items-center gap-1.5">
