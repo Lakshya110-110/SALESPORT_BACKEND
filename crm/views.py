@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db import transaction
 from django.db.models import Count, Sum, Q, OuterRef, Subquery
 from django.http import Http404
 from django.utils import timezone
@@ -25,6 +26,7 @@ from .phone import normalize_phone
 from .sockets import (
     emit_notification, emit_enquiry_event, emit_enquiry_action,
     emit_user_created, emit_user_updated, emit_user_deleted,
+    emit_enquiry_deleted,
 )
 from .notifications import get_notification_service
 from .otp_delivery import get_otp_delivery_service, SmsSendError
@@ -241,6 +243,40 @@ class EnquiryViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         return EnquiryDetailSerializer if self.action in ("retrieve", "create", "update", "partial_update") else EnquiryListSerializer
+
+    def get_permissions(self):
+        # Deleting a lead is permanent and takes its whole history with it, so
+        # it's console-only. Until this existed the viewset was a plain
+        # ModelViewSet on the default IsAuthenticated, which meant any logged-in
+        # user — a consultant included — could DELETE any enquiry they could see
+        # with one curl call. There was no button for it, which is not the same
+        # as it being closed.
+        if self.action == "destroy":
+            return [permissions.IsAuthenticated(), IsConsoleUser()]
+        return super().get_permissions()
+
+    def destroy(self, request, *args, **kwargs):
+        """Permanent delete, with the two relationships the database won't clean
+        up on its own.
+
+        Touchpoints, negotiation rounds, follow-ups and proposals are CASCADE and
+        go automatically. Two are not:
+          * Meeting.enquiry is SET_NULL, so meetings would survive as orphans —
+            still listed, still counted in the meetings KPIs, attributable to
+            nothing.
+          * Notification points at an enquiry by (link_type, link_id) strings
+            rather than a FK, so nothing cascades; the bell would keep offering
+            rows that 404 on click.
+        Both are removed first, inside one transaction, so a failure part-way
+        can't leave the enquiry gone but its debris behind."""
+        enq = self.get_object()
+        enquiry_id, owner_id = enq.id, enq.owner_id
+        with transaction.atomic():
+            Meeting.objects.filter(enquiry_id=enquiry_id).delete()
+            Notification.objects.filter(link_type="enquiry", link_id=str(enquiry_id)).delete()
+            enq.delete()
+        emit_enquiry_deleted(enquiry_id, owner_id)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_queryset(self):
         qs = super().get_queryset()

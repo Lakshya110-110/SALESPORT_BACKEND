@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Plus,
@@ -21,6 +21,7 @@ import {
   Calendar,
   IndianRupee,
   Users as UsersIcon,
+  Trash2,
 } from 'lucide-react';
 import {
   Briefcase, CircleDot, Trophy, XCircle,
@@ -33,6 +34,7 @@ import { Reveal } from '@/components/ui/Reveal';
 import { useModals } from '@/components/shell/ModalHost';
 import { DateField } from '@/components/ui/DateField';
 import { endpoints } from '@/lib/api/endpoints';
+import { Modal } from '@/components/ui/Modal';
 import { fmtInrShort } from '@/lib/utils/format';
 import { ddmm, timeAgo, avatarColor, initials, fmtPhone } from '@/lib/utils/format';
 import { isValidDDMM, ddmmToISO, isoToDDMM } from '@/lib/utils/date';
@@ -554,6 +556,7 @@ function Row({
 
 function RowActionsMenu({ e }: { e: EnquiryListItem }) {
   const [open, setOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -606,19 +609,120 @@ function RowActionsMenu({ e }: { e: EnquiryListItem }) {
           <MenuItem onSelect={() => copy(e.lead_id)}>Copy lead ID</MenuItem>
           {e.phone && <MenuItem onSelect={() => copy(fmtPhone(e.phone))}>Copy phone</MenuItem>}
           {e.email && <MenuItem onSelect={() => copy(e.email)}>Copy email</MenuItem>}
+          {/* Separated and tinted because it's the one entry here that destroys
+              something — every other item copies a string. Not role-gated in the
+              UI: consultants can't reach the web console at all (canUseConsole
+              blocks them at login), and IsConsoleUser on the server is the real
+              gate either way. */}
+          <div className="my-1 border-t border-b-subtle" />
+          <MenuItem
+            tone="danger"
+            onSelect={() => { setOpen(false); setConfirmDelete(true); }}
+          >
+            <Trash2 size={13} /> Delete lead
+          </MenuItem>
         </div>
       )}
+      <DeleteEnquiryModal
+        e={e}
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+      />
     </div>
   );
 }
 
-function MenuItem({ onSelect, children }: { onSelect: () => void; children: ReactNode }) {
+/**
+ * Permanent-delete confirmation. Names the lead and spells out what else goes
+ * with it, because the row itself gives no hint that its whole timeline,
+ * meetings and proposals are attached.
+ */
+function DeleteEnquiryModal({
+  e,
+  open,
+  onClose,
+}: {
+  e: EnquiryListItem;
+  open: boolean;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+
+  const remove = useMutation({
+    mutationFn: () => endpoints.enquiries.remove(e.id),
+    onSuccess: () => {
+      // The list, the dashboard KPIs and the meetings list all counted this
+      // enquiry, so all three are now stale.
+      qc.invalidateQueries({ queryKey: ['enquiries'] });
+      qc.invalidateQueries({ queryKey: ['dashboard'] });
+      qc.invalidateQueries({ queryKey: ['meetings'] });
+      onClose();
+    },
+  });
+
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Delete lead"
+      size="sm"
+      footer={
+        <>
+          <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+          <Button
+            type="button"
+            variant="danger"
+            loading={remove.isPending}
+            onClick={() => remove.mutate()}
+          >
+            Delete permanently
+          </Button>
+        </>
+      }
+    >
+      <div className="space-y-3 text-[13px] text-text" onClick={(ev) => ev.stopPropagation()}>
+        <p>
+          Permanently delete{' '}
+          <span className="font-semibold">{e.lead_id}</span>
+          {e.company_name ? <> &middot; <span className="font-semibold">{e.company_name}</span></> : null}?
+        </p>
+        <p className="text-[12px] text-subtle">
+          Its touchpoints, negotiation rounds, follow-ups, proposals and meetings are
+          deleted with it. The company and contact records are kept. This can&rsquo;t be
+          undone &mdash; to take a lead out of the pipeline without losing its history,
+          set its status to Lost instead.
+        </p>
+        {remove.error && (
+          <div className="rounded-md bg-danger-soft p-2 text-[12px] text-danger">
+            {(remove.error as Error).message}
+          </div>
+        )}
+      </div>
+    </Modal>
+  );
+}
+
+function MenuItem({
+  onSelect,
+  children,
+  tone = 'default',
+}: {
+  onSelect: () => void;
+  children: ReactNode;
+  /** 'danger' tints destructive entries so they don't read as one more copy action. */
+  tone?: 'default' | 'danger';
+}) {
   return (
     <button
       type="button"
       role="menuitem"
       onClick={(ev) => { ev.stopPropagation(); onSelect(); }}
-      className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[12.5px] text-text hover:bg-soft"
+      className={cn(
+        'flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-left text-[12.5px]',
+        tone === 'danger'
+          ? 'text-danger hover:bg-danger-soft'
+          : 'text-text hover:bg-soft',
+      )}
     >
       {children}
     </button>

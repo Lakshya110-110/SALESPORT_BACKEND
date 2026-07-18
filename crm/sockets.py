@@ -130,6 +130,19 @@ def emit_enquiry_event(enquiry, event: str) -> None:
     }, room=rooms)
 
 
+def emit_enquiry_deleted(enquiry_id: int, owner_id: int | None) -> None:
+    """Push a permanent removal so anyone with the list (or that enquiry's own
+    page) open drops it instead of showing a row that 404s when clicked.
+
+    Takes ids rather than the instance on purpose: by the time this is called
+    the row is gone, so there is nothing left to serialise. Same rooms as
+    emit_enquiry_event — every admin, plus the owner who had it in their queue."""
+    rooms = [_role_room("admin")]
+    if owner_id:
+        rooms.append(_user_room(owner_id))
+    async_to_sync(sio.emit)("enquiry:deleted", {"enquiry_id": enquiry_id}, room=rooms)
+
+
 def emit_user_created(user) -> None:
     """Push a newly-created user to the Users page — admin-only, mirrors
     emit_enquiry_event's "something changed, refetch" shape. Only admins

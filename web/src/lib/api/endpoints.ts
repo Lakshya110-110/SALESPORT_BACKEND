@@ -101,6 +101,12 @@ export const endpoints = {
       api.post<EnquiryListItem>(`/enquiries/${id}/reassign/`, { owner }),
     patch: (id: number | string, data: Partial<EnquiryListItem>) =>
       api.patch<EnquiryListItem>(`/enquiries/${id}/`, data),
+    /**
+     * Permanent — takes the lead's touchpoints, negotiation rounds, follow-ups,
+     * proposals and meetings with it. Console roles only; the server returns 403
+     * for consultants (IsConsoleUser on EnquiryViewSet.destroy).
+     */
+    remove: (id: number | string) => api.delete<void>(`/enquiries/${id}/`),
   },
 
   // ----- Companies / Contacts -----
