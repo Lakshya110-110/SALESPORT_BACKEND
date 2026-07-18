@@ -198,10 +198,14 @@ export function Rail() {
             )}
             aria-hidden={collapsed}
           >
-            <span className="text-[12px] font-bold">Khwaishein</span>
-            <span className="text-[12px] font-bold">
-              Solutions <span className="text-[#9DB2E8]">CRM</span>
-            </span>
+              {/* One wordmark everywhere: the product is "Khwaishein", the company
+                  is the subtitle. This read "Khwaishein Solutions CRM" while the
+                  login screen said just "Khwaishein" — two names for one product,
+                  on two screens a user sees back to back. */}
+              <span className="text-[13px] font-bold">Khwaishein</span>
+              <span className="text-[10px] font-medium text-[#9DB2E8]">
+                by Sort String Solutions LLP
+              </span>
           </div>
         </div>
 

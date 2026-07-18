@@ -10,6 +10,13 @@ export const metadata: Metadata = {
   },
   description: 'Enterprise Lead Management CRM — Sort String Solutions LLP',
   applicationName: 'Khwaishein',
+  // Browser tab / bookmark icon. Points at the same file the sidebar and login
+  // use, so there is one brand asset to replace rather than three.
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
 };
 
 export const viewport: Viewport = {

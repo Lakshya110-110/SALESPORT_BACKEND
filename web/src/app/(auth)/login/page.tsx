@@ -16,14 +16,34 @@ export default function LoginPage() {
   return (
     <div className="grid min-h-dvh grid-cols-1 md:grid-cols-2">
       {/* Left — brand */}
-      <aside className="relative flex flex-col justify-between overflow-hidden bg-ink px-10 py-12 text-white md:px-14 md:py-16">
+      {/* The panel's navy is hard-coded rather than using bg-ink, because in dark
+          mode --ink resolves to pure #000000 — the whole branded side turned into
+          a black rectangle and the product lost its identity on the one screen
+          every user sees first. Same gradient as the app rail, so signing in and
+          landing on the dashboard feel like one product. */}
+      <aside
+        style={{ background: 'linear-gradient(160deg, #1B2A6B, #16213D 55%, #101A33)' }}
+        className="relative flex flex-col justify-between overflow-hidden px-10 py-12 text-white md:px-14 md:py-16"
+      >
         <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-primary/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
 
         <div className="relative flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary font-display text-lg font-extrabold text-primary-fg">
-            S
-          </div>
+          {/* Real brand mark, on a white tile because the logo is dark navy and
+              would vanish against this panel.
+              No onError fallback here: this page is a server component (it
+              exports `metadata`), and an event handler on it fails the render
+              outright — "Event handlers cannot be passed to Client Component
+              props" — which took the whole login screen down with a 500. If the
+              file were ever missing the alt text carries the meaning. */}
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.png"
+              alt="Khwaishein by Sort String Solutions LLP"
+              className="h-full w-full object-contain p-[3px]"
+            />
+          </span>
           <div>
             <div className="font-display text-base font-bold leading-tight">Khwaishein</div>
             <div className="text-[11px] text-white/60">by Sort String Solutions LLP</div>
