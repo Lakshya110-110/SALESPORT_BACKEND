@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Plus,
   Search as SearchIcon,
@@ -554,22 +555,59 @@ function Row({
   );
 }
 
+/** Menu box: w-52 plus a rough height for 6 items — only used to decide whether
+ *  there's room below the button or the menu should flip above it. */
+const ROW_MENU_W = 208;
+const ROW_MENU_H = 232;
+
 function RowActionsMenu({ e }: { e: EnquiryListItem }) {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
+  // Position is computed from the button's viewport rect because the menu is
+  // portalled to <body> and so can't inherit the cell's coordinates.
   useEffect(() => {
-    if (!open) return;
+    if (!open) { setMenuPos(null); return; }
+    const place = () => {
+      const r = btnRef.current?.getBoundingClientRect();
+      if (!r) return;
+      const flipUp = r.bottom + ROW_MENU_H > window.innerHeight;
+      setMenuPos({
+        top: flipUp ? Math.max(8, r.top - ROW_MENU_H - 4) : r.bottom + 4,
+        // Right-aligned to the button, then clamped so a menu near either edge
+        // of the window stays fully on screen.
+        left: Math.min(
+          Math.max(8, r.right - ROW_MENU_W),
+          window.innerWidth - ROW_MENU_W - 8,
+        ),
+      });
+    };
+    place();
+
     const onDoc = (ev: MouseEvent) => {
-      if (!ref.current?.contains(ev.target as Node)) setOpen(false);
+      const t = ev.target as Node;
+      // The menu is no longer inside `ref`, so an outside-click test has to
+      // exempt the portalled menu too or every click on it would close it.
+      if (ref.current?.contains(t)) return;
+      if ((t as Element)?.closest?.('[role="menu"]')) return;
+      setOpen(false);
     };
     const onKey = (ev: KeyboardEvent) => ev.key === 'Escape' && setOpen(false);
+    // Fixed positioning doesn't follow a scrolling ancestor, so the menu would
+    // hang in place while the table moved under it. Close instead of chasing it.
+    const onScroll = () => setOpen(false);
     document.addEventListener('mousedown', onDoc);
     document.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', place);
     return () => {
       document.removeEventListener('mousedown', onDoc);
       document.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', place);
     };
   }, [open]);
 
@@ -582,6 +620,7 @@ function RowActionsMenu({ e }: { e: EnquiryListItem }) {
   return (
     <div ref={ref} className="relative" onClick={stop}>
       <button
+        ref={btnRef}
         type="button"
         aria-label="Row actions"
         aria-expanded={open}
@@ -590,10 +629,17 @@ function RowActionsMenu({ e }: { e: EnquiryListItem }) {
       >
         <MoreHorizontal size={16} />
       </button>
-      {open && (
+      {/* Rendered into <body>, not here. As an absolutely-positioned child of a
+          cell it still counted toward the table scroller's scrollable overflow,
+          so opening it grew the container (measured: 747px -> 930px) — the table
+          appeared to stretch and the scrollbar jumped. A portal + fixed
+          positioning takes it out of that calculation entirely. */}
+      {open && menuPos && createPortal(
         <div
           role="menu"
-          className="absolute right-0 top-[calc(100%+4px)] z-40 w-52 overflow-hidden rounded-lg border border-b-subtle bg-surface p-1 shadow-pop animate-slide-up"
+          style={{ position: 'fixed', top: menuPos.top, left: menuPos.left }}
+          className="z-[95] w-52 overflow-hidden rounded-lg border border-b-subtle bg-surface p-1 shadow-pop animate-slide-up"
+          onClick={(ev) => ev.stopPropagation()}
         >
           <a
             role="menuitem"
@@ -621,7 +667,8 @@ function RowActionsMenu({ e }: { e: EnquiryListItem }) {
           >
             <Trash2 size={13} /> Delete lead
           </MenuItem>
-        </div>
+        </div>,
+        document.body,
       )}
       <DeleteEnquiryModal
         e={e}
