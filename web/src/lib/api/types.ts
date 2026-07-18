@@ -112,6 +112,9 @@ export type EnquiryListItem = {
   company_name: string;
   contact: number | null;
   contact_name: string | null;
+  /** Job title of the linked contact, e.g. "Purchase Head". Null when the
+   *  enquiry has no contact, or the contact has no designation recorded. */
+  contact_designation: string | null;
   phone: string;
   email: string;
   source: string;

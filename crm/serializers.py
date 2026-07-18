@@ -202,6 +202,12 @@ class EnquiryListSerializer(serializers.ModelSerializer):
     company_name = serializers.CharField(source="company.name", read_only=True)
     owner_name = serializers.CharField(source="owner.name", read_only=True)
     contact_name = serializers.CharField(source="contact.name", read_only=True)
+    # Surfaced alongside the name so every screen showing a contact can say
+    # who they are, not just what they're called. allow_null because an
+    # enquiry can have no contact at all (Enquiry.contact is nullable).
+    contact_designation = serializers.CharField(
+        source="contact.designation", read_only=True, allow_null=True
+    )
     # Hot/Warm/Cold computed from expected_close_date (model property) —
     # clients should render THIS, not the vestigial enquiry_type column.
     derived_type = serializers.ReadOnlyField()
@@ -227,6 +233,7 @@ class EnquiryListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Enquiry
         fields = ["id", "lead_id", "company", "company_name", "contact", "contact_name",
+                  "contact_designation",
                   "phone", "email", "source", "enquiry_type", "derived_type", "status",
                   "industry", "expected_value", "expected_close_date", "owner", "owner_name",
                   "lost_reason", "last_touch_at", "next_followup_at", "created_at", "updated_at"]
@@ -235,6 +242,12 @@ class EnquiryListSerializer(serializers.ModelSerializer):
 class EnquiryDetailSerializer(IndianMobileMixin, serializers.ModelSerializer):
     company_name = serializers.CharField(source="company.name", read_only=True)
     contact_name = serializers.CharField(source="contact.name", read_only=True)
+    # Surfaced alongside the name so every screen showing a contact can say
+    # who they are, not just what they're called. allow_null because an
+    # enquiry can have no contact at all (Enquiry.contact is nullable).
+    contact_designation = serializers.CharField(
+        source="contact.designation", read_only=True, allow_null=True
+    )
     owner_name = serializers.CharField(source="owner.name", read_only=True)
     derived_type = serializers.ReadOnlyField()
     touchpoints = TouchpointSerializer(many=True, read_only=True)
@@ -259,7 +272,8 @@ class EnquiryDetailSerializer(IndianMobileMixin, serializers.ModelSerializer):
 
     class Meta:
         model = Enquiry
-        fields = ["id", "lead_id", "company", "company_name", "contact", "contact_name", "phone", "email",
+        fields = ["id", "lead_id", "company", "company_name", "contact", "contact_name",
+                  "contact_designation", "phone", "email",
                   "gstin", "source", "enquiry_type", "derived_type", "status", "industry",
                   "solution_type", "solution_type_other",
                   "expected_value", "expected_close_date", "owner", "owner_name",

@@ -284,7 +284,15 @@ function StatStrip({ e }: { e: EnquiryDetail }) {
       ),
     },
     { label: 'Expected closure', value: e.expected_close_date ? ddmm(e.expected_close_date) : '—' },
-    { label: 'Contact', value: e.contact_name || e.owner_name || '—' },
+    {
+      label: 'Contact',
+      // Designation qualifies the NAME, so it only shows when there is a real
+      // contact — not when this has fallen back to the owner, whose job title
+      // this is not.
+      value: e.contact_name
+        ? `${e.contact_name}${e.contact_designation ? ` · ${e.contact_designation}` : ''}`
+        : e.owner_name || '—',
+    },
     { label: 'Source', value: e.source },
     { label: 'Industry', value: e.industry },
   ];

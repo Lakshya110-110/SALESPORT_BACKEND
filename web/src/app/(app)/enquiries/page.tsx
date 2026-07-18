@@ -515,7 +515,21 @@ function Row({
           <IndustryBadge industry={e.industry} />
         </div>
       </Td>
-      <Td className="hidden md:table-cell">{e.contact_name ?? '—'}</Td>
+      <Td className="hidden md:table-cell">
+        {e.contact_name ? (
+          <div className="flex flex-col">
+            <span className="text-text">{e.contact_name}</span>
+            {/* Designation under the name rather than in its own column: it
+                only means anything next to the person it belongs to, and the
+                table is already tight at laptop widths. */}
+            {e.contact_designation && (
+              <span className="text-[11px] text-subtle">{e.contact_designation}</span>
+            )}
+          </div>
+        ) : (
+          '—'
+        )}
+      </Td>
       <Td className="hidden xl:table-cell">
         <div className="flex flex-col gap-[3px] whitespace-nowrap text-[12px] text-muted">
           {e.phone && (
@@ -1500,6 +1514,7 @@ function exportEnquiriesCsv(rows: EnquiryListItem[]) {
     ['Company',          (e) => e.company_name],
     ['Industry',         (e) => e.industry],
     ['Contact person',   (e) => e.contact_name ?? ''],
+    ['Designation',      (e) => e.contact_designation ?? ''],
     ['Phone',            (e) => fmtPhone(e.phone)],
     ['Email',            (e) => e.email],
     ['Enquiry source',   (e) => e.source],
