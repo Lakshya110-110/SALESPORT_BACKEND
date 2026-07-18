@@ -16,14 +16,12 @@ import type { MasterDataItem } from '@/lib/api/types';
 
 const MD_SORT = {
   value: (m: MasterDataItem) => m.value?.toLowerCase(),
-  label: (m: MasterDataItem) => m.label?.toLowerCase(),
   order: (m: MasterDataItem) => m.order ?? 0,
 };
 
 const MD_CSV_COLS: Array<[string, (m: MasterDataItem) => string]> = [
   ['Category', (m) => m.category],
   ['Value', (m) => m.value],
-  ['Label', (m) => m.label ?? ''],
   ['Order', (m) => String(m.order ?? '')],
   ['Active', (m) => (m.is_active ? 'Yes' : 'No')],
 ];
@@ -146,7 +144,6 @@ function CategoryTable({
       <thead>
         <tr className="border-b border-b-default bg-sunken">
           <SortableTh label="Value" sortKey="value" activeKey={activeKey} dir={dir} onSort={onSort} />
-          <SortableTh label="Label" sortKey="label" activeKey={activeKey} dir={dir} onSort={onSort} />
           <SortableTh label="Order" sortKey="order" align="right" activeKey={activeKey} dir={dir} onSort={onSort} />
           {canEdit && <Th />}
         </tr>
@@ -170,14 +167,13 @@ function CategoryTable({
           sorted.map((m) => (
             <tr key={m.id} className="border-t border-b-subtle hover:bg-soft">
               <Td><span className="font-mono">{m.value}</span></Td>
-              <Td>{m.label}</Td>
               <Td className="text-right font-mono tabular-nums text-subtle">{m.order}</Td>
               {canEdit && (
                 <Td className="text-right">
                   <button
                     type="button"
                     onClick={() => {
-                      if (confirm(`Remove "${m.label}"?`)) del.mutate(m.id);
+                      if (confirm(`Remove "${m.value}"?`)) del.mutate(m.id);
                     }}
                     aria-label="Delete"
                     className="rounded-md p-1 text-subtle hover:bg-danger-soft hover:text-danger"
@@ -205,12 +201,11 @@ function AddModal({
   category: MasterDataItem['category'];
 }) {
   const [value, setValue] = useState('');
-  const [label, setLabel] = useState('');
   const [order, setOrder] = useState('0');
   const qc = useQueryClient();
 
   const reset = () => {
-    setValue(''); setLabel(''); setOrder('0');
+    setValue(''); setOrder('0');
   };
 
   const submit = useMutation({
@@ -218,7 +213,11 @@ function AddModal({
       endpoints.masterDataWrite.create({
         category,
         value: value.trim(),
-        label: (label.trim() || value.trim()),
+        // MasterData.label is non-null in the model but nothing reads it —
+        // every picker maps over `value`. Mirroring value keeps the column
+        // valid without a migration, and without asking for a second name
+        // that would never be displayed anywhere.
+        label: value.trim(),
         order: Number(order) || 0,
       }),
     onSuccess: () => {
@@ -254,11 +253,8 @@ function AddModal({
         onSubmit={(e: FormEvent<HTMLFormElement>) => { e.preventDefault(); submit.mutate(); }}
         className="space-y-3"
       >
-        <Field label="Value (used by API)" required>
+        <Field label="Value" required>
           <input value={value} onChange={(e) => setValue(e.target.value)} className={inputCls} placeholder="e.g. Retail" />
-        </Field>
-        <Field label="Label (shown to users)">
-          <input value={label} onChange={(e) => setLabel(e.target.value)} className={inputCls} placeholder="Defaults to value" />
         </Field>
         <Field label="Order">
           <input value={order} onChange={(e) => setOrder(e.target.value.replace(/[^0-9]/g, ''))} className={inputCls} inputMode="numeric" />
