@@ -426,23 +426,32 @@ function TimelineItem({ t, last }: { t: Touchpoint; last: boolean }) {
         <span className="text-[12.5px] font-semibold text-text">{channelLabel(t)}</span>
         <span className="text-[11.5px] text-subtle">{ddmm(t.created_at)} · {timeAgo(t.created_at)}</span>
       </div>
+      {/* break-words on every free-text field below: default overflow-wrap only
+          breaks at spaces, so a single unbroken run (a pasted id, a mistyped
+          keyboard mash) has nowhere to wrap and runs off the card in one long
+          line instead of flowing to the next. Same fix as the description
+          block further down. whitespace-pre-line keeps the author's own line
+          breaks, which a plain block would otherwise collapse. */}
       {t.outcome && (
-        <div className="mt-1 text-[12.5px] text-muted">
+        <div className="mt-1 whitespace-pre-line break-words text-[12.5px] text-muted">
           {t.outcome}
         </div>
       )}
       {t.channel === 'Email' && t.subject && (
-        <div className="mt-1 text-[12.5px] font-semibold text-text">{t.subject}</div>
+        <div className="mt-1 break-words text-[12.5px] font-semibold text-text">{t.subject}</div>
       )}
       {t.note && (
-        <div className="mt-1 text-[12.5px] text-muted">
+        <div className="mt-1 whitespace-pre-line break-words text-[12.5px] text-muted">
           {t.note}
         </div>
       )}
       {(t.next_action || t.created_by_name || t.sentiment || t.is_private) && (
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {/* min-w-0 as well as break-words: this is a flex item, and a flex
+              item defaults to min-width:auto, so it refuses to shrink below its
+              content and break-words alone would never get the chance to act. */}
           {t.next_action && (
-            <span className="rounded-md bg-soft px-2 py-[3px] text-[10.5px] font-semibold text-muted">
+            <span className="min-w-0 max-w-full break-words rounded-md bg-soft px-2 py-[3px] text-[10.5px] font-semibold text-muted">
               Next: {t.next_action}
             </span>
           )}
@@ -689,7 +698,8 @@ function CommunicationCard({ e }: { e: EnquiryDetail }) {
                     </span>
                   )}
                 </div>
-                <div className="text-[12.5px] text-muted">{n.note}</div>
+                {/* Same unbroken-run wrap fix as the timeline note above. */}
+                <div className="whitespace-pre-line break-words text-[12.5px] text-muted">{n.note}</div>
               </div>
             ))}
           </div>
