@@ -207,7 +207,23 @@ export function LoginPanel() {
         />
       </div>
 
-      {error && <p className="mb-2 text-[11.5px] text-danger">{error}</p>}
+      {/* Status sits directly under the boxes, which is where the eye already is
+          after typing the sixth digit. The submit button also flips to
+          "Verifying…", but it's below the fold of attention at that moment — the
+          boxes just grey out, which reads as nothing having happened rather than
+          as work in progress, and people conclude the login failed while the
+          request is still open. */}
+      {verifyOtp.isPending ? (
+        <p className="mb-2 flex items-center gap-2 text-[11.5px] font-medium text-primary" role="status">
+          <span
+            aria-hidden
+            className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary/30 border-t-primary"
+          />
+          Verifying your code…
+        </p>
+      ) : (
+        error && <p className="mb-2 text-[11.5px] text-danger">{error}</p>
+      )}
 
       <Button
         type="submit"
