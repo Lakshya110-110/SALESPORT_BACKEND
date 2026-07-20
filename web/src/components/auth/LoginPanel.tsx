@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { ArrowLeft, Check, Shield } from 'lucide-react';
@@ -13,6 +13,10 @@ import { session } from '@/lib/auth/session';
 import { canUseConsole } from '@/lib/auth/console';
 
 type Step = 'phone' | 'otp';
+
+/** Gap enforced between OTP sends. Long enough to outlast a slow SMS so people
+ *  stop re-requesting before the first one lands. */
+const RESEND_COOLDOWN_SEC = 30;
 
 /**
  * LoginPanel — the right-hand form panel of the login screen.
@@ -29,6 +33,33 @@ export function LoginPanel() {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [keepSignedIn, setKeepSignedIn] = useState(true);
+  // Seconds left before "Resend OTP" becomes clickable again. Each request
+  // sends a real SMS that costs money, and the previous code stays valid for
+  // its full TTL, so hammering resend just buys more codes that all work —
+  // confusing to the user and billable to us.
+  const [resendIn, setResendIn] = useState(0);
+  const timerRef = useRef<number | null>(null);
+
+  const startResendCooldown = () => {
+    setResendIn(RESEND_COOLDOWN_SEC);
+    if (timerRef.current) window.clearInterval(timerRef.current);
+    timerRef.current = window.setInterval(() => {
+      setResendIn((n) => {
+        if (n <= 1) {
+          if (timerRef.current) window.clearInterval(timerRef.current);
+          timerRef.current = null;
+          return 0;
+        }
+        return n - 1;
+      });
+    }, 1000);
+  };
+
+  // Clear the interval if the panel unmounts mid-countdown, so it isn't left
+  // ticking against a component that no longer exists.
+  useEffect(() => () => {
+    if (timerRef.current) window.clearInterval(timerRef.current);
+  }, []);
 
   // The input keeps a display-formatted value ("98765 43210"); the API
   // always receives bare digits.
@@ -41,6 +72,7 @@ export function LoginPanel() {
       // Dev-mode helper: auto-fill the returned OTP so tests are one-click.
       if (data.otp) setCode(data.otp);
       setStep('otp');
+      startResendCooldown();
     },
     onError: (err) => setError(err instanceof ApiError ? err.message : String(err)),
   });
@@ -62,7 +94,15 @@ export function LoginPanel() {
       session.saveUser(data.user);
       router.replace('/dashboard');
     },
-    onError: (err) => setError(err instanceof ApiError ? err.message : String(err)),
+    onError: (err) => {
+      setError(err instanceof ApiError ? err.message : String(err));
+      // The server marks an OTP used on the FIRST verify attempt, valid or not,
+      // so the digits on screen are now dead. Leaving them there invites the
+      // user to press Verify again and get "Invalid or expired OTP" a second
+      // time, which reads as the app being broken rather than the code being
+      // spent. Clearing them points at Resend, which is the only way forward.
+      setCode('');
+    },
   });
 
   const submitPhone = (e: React.FormEvent) => {
@@ -159,6 +199,10 @@ export function LoginPanel() {
           onChange={setCode}
           onComplete={submitOtp}
           autoFocus
+          // Frozen while verifying: editing mid-flight changes the digits on
+          // screen while a different code is already being checked, so the
+          // result appears to belong to what's displayed when it doesn't.
+          disabled={verifyOtp.isPending}
           error={!!error && !verifyOtp.isPending}
         />
       </div>
@@ -170,8 +214,11 @@ export function LoginPanel() {
         className="mt-6 w-full"
         loading={verifyOtp.isPending}
         leftIcon={<Check size={16} />}
+        // Spinner alone reads as "nothing is happening" on a slow SMS network.
+        // Naming the action makes the wait legible.
+        disabled={verifyOtp.isPending || code.length !== 6}
       >
-        Verify &amp; sign in
+        {verifyOtp.isPending ? 'Verifying…' : 'Verify & sign in'}
       </Button>
 
       <p className="mt-5 text-center text-xs text-muted">
@@ -179,10 +226,14 @@ export function LoginPanel() {
         <button
           type="button"
           onClick={() => requestOtp.mutate()}
-          className="font-semibold text-primary hover:underline"
-          disabled={requestOtp.isPending}
+          className="font-semibold text-primary hover:underline disabled:cursor-not-allowed disabled:text-subtle disabled:no-underline"
+          disabled={requestOtp.isPending || resendIn > 0}
         >
-          Resend OTP
+          {requestOtp.isPending
+            ? 'Sending…'
+            : resendIn > 0
+              ? `Resend OTP in ${resendIn}s`
+              : 'Resend OTP'}
         </button>
       </p>
 
