@@ -53,8 +53,14 @@ export function SectionHeader({ title, subtitle, actions, hideSearch }: SectionH
           read as the icons overlapping), "Export to Excel" wrapped onto a second
           line inside a fixed-height header, and New Enquiry was pushed off the
           right edge. Letting the title shrink lets its `truncate` do the job it
-          was always there for. */}
-      <div className="min-w-0 flex-1">
+          was always there for.
+          min-w-0 (not flex-1) is deliberate: flex-1 would make the title GROW
+          and split the row 50/50 with the search — which is also flex-1 — so the
+          search bar ended up marooned in the middle instead of filling the gap
+          to the controls. min-w-0 keeps the shrink (default flex-shrink) that
+          stops the controls being crushed, without the grow that stole the
+          search's space. */}
+      <div className="min-w-0">
         <h1 className="truncate font-display text-[28px] font-extrabold leading-tight tracking-[-0.6px] text-text">
           {title}
         </h1>

@@ -646,7 +646,9 @@ function CommunicationCard({ e }: { e: EnquiryDetail }) {
           {contactName ?? e.company_name}{e.phone ? ` · ${fmtPhone(e.phone)}` : ''}
         </span>
       </div>
-      <div className="flex flex-1 flex-col p-[18px]">
+      {/* min-h-0: without it this flex child won't shrink below its content, so
+          a long thread grows the whole card instead of scrolling inside it. */}
+      <div className="flex min-h-0 flex-1 flex-col p-[18px]">
         {/* rbac-note */}
         <div className="mb-[14px] flex items-start gap-[9px] rounded-md border border-transparent bg-warning-soft p-[9px_11px] text-[11px] leading-[1.5] text-muted">
           <svg width={15} height={15} viewBox="0 0 24 24" stroke="var(--warning)" strokeWidth={1.8} fill="none" className="mt-[1px] shrink-0">
@@ -781,7 +783,7 @@ function SmsPane({ e }: { e: EnquiryDetail }) {
   const noPhone = !(e.contact_name && e.phone) && !e.phone;
 
   return (
-    <div className="flex flex-1 flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
       {/* thread */}
       <div className="sp-scroll min-h-[80px] flex-1 space-y-2.5 overflow-y-auto rounded-md border border-b-subtle bg-soft/40 p-3">
         {sms.length === 0 ? (
@@ -875,7 +877,7 @@ function EmailPane({ e }: { e: EnquiryDetail }) {
   const toEmail = e.email || '';
 
   return (
-    <div className="flex flex-1 flex-col gap-3">
+    <div className="flex min-h-0 flex-1 flex-col gap-3">
       {/* thread */}
       <div className="sp-scroll min-h-[70px] flex-1 space-y-2.5 overflow-y-auto rounded-md border border-b-subtle bg-soft/40 p-3">
         {emails.length === 0 ? (
