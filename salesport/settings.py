@@ -452,6 +452,15 @@ EMAIL_HOST = env("EMAIL_HOST", "")
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "")
 EMAIL_FROM = env("EMAIL_FROM", "")
+EMAIL_PORT = int(env("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = env("EMAIL_USE_TLS", "1") == "1"
+# SMTP when a host is configured; otherwise a no-op console backend so a dev
+# box logs the message instead of erroring on a missing mail server.
+EMAIL_BACKEND = (
+    "django.core.mail.backends.smtp.EmailBackend" if EMAIL_HOST
+    else "django.core.mail.backends.console.EmailBackend"
+)
+DEFAULT_FROM_EMAIL = EMAIL_FROM or EMAIL_HOST_USER or "no-reply@sortstring.com"
 
 # ---------------------------------------------------------------------------
 # Django-Q2 task runner (Phase 7 Follow-ups + Phase 10 Notification fan-out).

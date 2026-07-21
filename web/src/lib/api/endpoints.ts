@@ -113,6 +113,9 @@ export const endpoints = {
      *  gateway wired) it logs the touchpoint without sending. */
     sendSms: (id: number | string, template: number) =>
       api.post<Touchpoint>(`/enquiries/${id}/send_sms/`, { template }),
+    /** Free-text email to the lead. Sends via SMTP when configured, logs in dev. */
+    sendEmail: (id: number | string, subject: string, body: string) =>
+      api.post<Touchpoint>(`/enquiries/${id}/send_email/`, { subject, body }),
   },
 
   // ----- Companies / Contacts -----

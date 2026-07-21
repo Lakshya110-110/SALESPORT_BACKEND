@@ -31,6 +31,7 @@ from .sockets import (
 from .notifications import get_notification_service
 from .otp_delivery import get_otp_delivery_service, SmsSendError
 from .sms import deliver_sms, sms_live
+from .email_send import send_email, email_live, EmailSendError
 
 
 # ===========================================================================
@@ -537,6 +538,55 @@ class EnquiryViewSet(viewsets.ModelViewSet):
         emit_enquiry_action(enq, "touchpoint:created", {"touchpoint": data})
         return Response(
             {**data, "delivery": "sent" if sms_live() else "logged (dev mode — no SMS gateway wired)"},
+            status=status.HTTP_201_CREATED,
+        )
+
+    # ---- Send an email to the lead ----
+    @action(detail=True, methods=["post"])
+    def send_email(self, request, pk=None):
+        """Free-text email to the enquiry's contact, logged as an Email touchpoint.
+
+        No template constraint (email has no DLT), so the caller supplies subject
+        and body directly. In dev mode (no SMTP host) it logs without sending;
+        in live mode a failure raises and we surface a 502 rather than logging a
+        message that never left. Scopes itself via get_queryset like send_sms."""
+        enq = self.get_object()
+        to = (enq.contact.email if enq.contact and enq.contact.email else enq.email or "").strip()
+        if not to:
+            return Response(
+                {"detail": "This enquiry has no contact email to send to."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        subject = (request.data.get("subject") or "").strip()
+        body = (request.data.get("body") or "").strip()
+        if not subject or not body:
+            return Response(
+                {"detail": "Both a subject and a message are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if email_live():
+            try:
+                send_email(to=to, subject=subject, body=body)
+            except EmailSendError as exc:
+                return Response(
+                    {"detail": f"Couldn't send the email. {exc}"},
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+
+        tp = Touchpoint.objects.create(
+            enquiry=enq,
+            channel="Email",
+            direction="Outbound",
+            subject=subject,
+            note=body,
+            created_by=request.user,
+        )
+        data = TouchpointSerializer(tp).data
+        emit_enquiry_action(enq, "touchpoint:created", {"touchpoint": data})
+        return Response(
+            {**data, "delivery": "sent" if email_live() else "logged (dev mode — no mail server wired)"},
             status=status.HTTP_201_CREATED,
         )
 

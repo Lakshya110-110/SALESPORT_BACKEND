@@ -695,6 +695,8 @@ function CommunicationCard({ e }: { e: EnquiryDetail }) {
         {/* ch-pane — grows to fill the card when Communication is stretched. */}
         {tab === 'sms' ? (
           <SmsPane e={e} />
+        ) : tab === 'email' ? (
+          <EmailPane e={e} />
         ) : tab === 'notes' && notes.length > 0 ? (
           <div className="sp-scroll flex-1 space-y-2.5 overflow-y-auto rounded-md border border-b-subtle bg-soft/40 p-3">
             {notes.map((n) => (
@@ -717,16 +719,13 @@ function CommunicationCard({ e }: { e: EnquiryDetail }) {
           <div className="flex flex-1 flex-col rounded-md border border-b-subtle bg-soft/40 p-4 text-[12.5px] text-subtle">
             <div className="flex flex-1 flex-col items-center justify-center gap-2 py-6 text-center">
               <div className="text-[13px] font-semibold text-text">
-                {tab === 'wa' && 'WhatsApp thread will appear here.'}
-                {tab === 'email' && 'Email thread will appear here.'}
+                {tab === 'wa' && 'WhatsApp isn’t connected yet.'}
                 {tab === 'notes' && 'No internal notes yet.'}
               </div>
               <div className="max-w-md text-[12px] leading-relaxed">
-                {tab === 'email'
-                  ? 'Ingested from a shared mailbox once the connector is wired.'
-                  : tab === 'notes'
+                {tab === 'notes'
                   ? 'Log a touchpoint with the Note channel and it will appear here.'
-                  : 'Ingested from the WhatsApp Business API / SMS gateway once the connector is wired.'}
+                  : 'Sending WhatsApp needs a WhatsApp Business provider (Meta / a BSP) — a setup step, not a switch. Ask the team to wire one.'}
               </div>
             </div>
           </div>
@@ -841,6 +840,95 @@ function SmsPane({ e }: { e: EnquiryDetail }) {
                 onClick={() => send.mutate()}
               >
                 Send SMS
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Email pane — free-text subject + body to the lead's contact, sent via SMTP
+ * (or logged in dev), and the sent emails as a thread. No template constraint,
+ * unlike SMS: email isn't governed by DLT.
+ */
+function EmailPane({ e }: { e: EnquiryDetail }) {
+  const qc = useQueryClient();
+  const [subject, setSubject] = useState('');
+  const [body, setBody] = useState('');
+
+  const emails = [...e.touchpoints]
+    .filter((t) => t.channel === 'Email')
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  const send = useMutation({
+    mutationFn: () => endpoints.enquiries.sendEmail(e.id, subject.trim(), body.trim()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['enquiries', 'detail', String(e.id)] });
+      setSubject('');
+      setBody('');
+    },
+  });
+
+  const toEmail = e.email || '';
+
+  return (
+    <div className="flex flex-1 flex-col gap-3">
+      {/* thread */}
+      <div className="sp-scroll min-h-[70px] flex-1 space-y-2.5 overflow-y-auto rounded-md border border-b-subtle bg-soft/40 p-3">
+        {emails.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-1 py-6 text-center text-[12px] text-subtle">
+            <div className="text-[13px] font-semibold text-text">No emails sent yet.</div>
+            <div>Compose one below.</div>
+          </div>
+        ) : (
+          emails.map((t) => (
+            <div key={t.id} className="ml-auto max-w-[90%] rounded-md rounded-br-sm border border-b-subtle bg-surface p-2.5">
+              {t.subject && <div className="mb-0.5 text-[12px] font-semibold text-text">{t.subject}</div>}
+              <div className="whitespace-pre-line break-words text-[12px] text-muted">{t.note}</div>
+              <div className="mt-1 text-right text-[10.5px] text-subtle">
+                {t.created_by_name ?? ''} · {timeAgo(t.created_at)}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* composer */}
+      <div className="space-y-2 rounded-md border border-b-subtle bg-surface p-3">
+        {!toEmail ? (
+          <p className="text-[11.5px] text-subtle">This enquiry has no contact email to send to.</p>
+        ) : (
+          <>
+            <input
+              value={subject}
+              onChange={(ev) => setSubject(ev.target.value)}
+              placeholder="Subject"
+              className="h-9 w-full rounded-md border border-b-default bg-surface px-2.5 text-[12.5px] text-text placeholder:text-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-soft"
+            />
+            <textarea
+              value={body}
+              onChange={(ev) => setBody(ev.target.value)}
+              rows={3}
+              placeholder="Write your message…"
+              className="w-full rounded-md border border-b-default bg-surface px-2.5 py-2 text-[12.5px] leading-relaxed text-text placeholder:text-subtle focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-soft"
+            />
+            {send.error && (
+              <div className="rounded-md bg-danger-soft p-2 text-[11.5px] text-danger">
+                {(send.error as Error).message}
+              </div>
+            )}
+            <div className="flex items-center justify-between">
+              <span className="text-[10.5px] text-subtle">To {toEmail}</span>
+              <Button
+                size="sm"
+                loading={send.isPending}
+                disabled={!subject.trim() || !body.trim()}
+                onClick={() => send.mutate()}
+              >
+                Send Email
               </Button>
             </div>
           </>
