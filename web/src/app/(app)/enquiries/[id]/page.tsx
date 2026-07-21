@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type ReactNode } from 'react';
 import { getSocket } from '@/lib/socket';
 import { ArrowLeft, Plus } from 'lucide-react';
@@ -693,7 +693,9 @@ function CommunicationCard({ e }: { e: EnquiryDetail }) {
         </div>
 
         {/* ch-pane — grows to fill the card when Communication is stretched. */}
-        {tab === 'notes' && notes.length > 0 ? (
+        {tab === 'sms' ? (
+          <SmsPane e={e} />
+        ) : tab === 'notes' && notes.length > 0 ? (
           <div className="sp-scroll flex-1 space-y-2.5 overflow-y-auto rounded-md border border-b-subtle bg-soft/40 p-3">
             {notes.map((n) => (
               <div key={n.id} className="rounded-md border border-b-subtle bg-surface p-3">
@@ -716,7 +718,6 @@ function CommunicationCard({ e }: { e: EnquiryDetail }) {
             <div className="flex flex-1 flex-col items-center justify-center gap-2 py-6 text-center">
               <div className="text-[13px] font-semibold text-text">
                 {tab === 'wa' && 'WhatsApp thread will appear here.'}
-                {tab === 'sms' && 'SMS thread will appear here.'}
                 {tab === 'email' && 'Email thread will appear here.'}
                 {tab === 'notes' && 'No internal notes yet.'}
               </div>
@@ -732,6 +733,120 @@ function CommunicationCard({ e }: { e: EnquiryDetail }) {
         )}
       </div>
     </Card>
+  );
+}
+
+/**
+ * SMS pane — the outbound half of Option A. Shows SMS touchpoints for this
+ * enquiry as a thread, and a composer that sends a DLT-approved template.
+ *
+ * Consultants pick a template; they can't type free text, because India's DLT
+ * regime only permits registered template bodies. The preview fills the same
+ * {blanks} the server does so what you see is what goes out.
+ */
+function SmsPane({ e }: { e: EnquiryDetail }) {
+  const qc = useQueryClient();
+  const [templateId, setTemplateId] = useState<number | null>(null);
+
+  const sms = [...e.touchpoints]
+    .filter((t) => t.channel === 'SMS')
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+  const templatesQ = useQuery({
+    queryKey: ['sms-templates'],
+    queryFn: () => endpoints.smsTemplates.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const templates = templatesQ.data?.results ?? [];
+  const selected = templates.find((t) => t.id === templateId) ?? null;
+
+  // Client-side preview of the same blanks the server fills, so the consultant
+  // sees the real message before sending.
+  const preview = selected
+    ? selected.body
+        .replace(/\{name\}/g, e.contact_name ?? '')
+        .replace(/\{company\}/g, e.company_name ?? '')
+        .replace(/\{lead_id\}/g, e.lead_id ?? '')
+        .replace(/\{consultant\}/g, e.owner_name ?? '')
+    : '';
+
+  const send = useMutation({
+    mutationFn: () => endpoints.enquiries.sendSms(e.id, templateId as number),
+    onSuccess: () => {
+      // The sent SMS is a new touchpoint on this enquiry.
+      qc.invalidateQueries({ queryKey: ['enquiries', 'detail', String(e.id)] });
+      setTemplateId(null);
+    },
+  });
+
+  const noPhone = !(e.contact_name && e.phone) && !e.phone;
+
+  return (
+    <div className="flex flex-1 flex-col gap-3">
+      {/* thread */}
+      <div className="sp-scroll min-h-[80px] flex-1 space-y-2.5 overflow-y-auto rounded-md border border-b-subtle bg-soft/40 p-3">
+        {sms.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-1 py-6 text-center text-[12px] text-subtle">
+            <div className="text-[13px] font-semibold text-text">No SMS sent yet.</div>
+            <div>Pick a template below and send a follow-up.</div>
+          </div>
+        ) : (
+          sms.map((t) => (
+            <div key={t.id} className="ml-auto max-w-[85%] rounded-md rounded-br-sm border border-primary-soft bg-primary-soft/60 p-2.5">
+              <div className="whitespace-pre-line break-words text-[12.5px] text-text">{t.note}</div>
+              <div className="mt-1 text-right text-[10.5px] text-subtle">
+                {t.created_by_name ?? ''} · {timeAgo(t.created_at)}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* composer */}
+      <div className="rounded-md border border-b-subtle bg-surface p-3">
+        {templates.length === 0 ? (
+          <p className="text-[11.5px] text-subtle">
+            No SMS templates yet. An admin adds DLT-approved templates in settings before messages can be sent.
+          </p>
+        ) : (
+          <>
+            <select
+              value={templateId ?? ''}
+              onChange={(ev) => setTemplateId(ev.target.value ? Number(ev.target.value) : null)}
+              className="h-9 w-full rounded-md border border-b-default bg-surface px-2.5 text-[12.5px] text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary-soft"
+            >
+              <option value="">Choose a template…</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+            {selected && (
+              <div className="mt-2 whitespace-pre-line break-words rounded-md bg-soft p-2 text-[12px] text-muted">
+                {preview}
+              </div>
+            )}
+            {send.error && (
+              <div className="mt-2 rounded-md bg-danger-soft p-2 text-[11.5px] text-danger">
+                {(send.error as Error).message}
+              </div>
+            )}
+            <div className="mt-2 flex items-center justify-between">
+              <span className="text-[10.5px] text-subtle">
+                Sent to {e.contact_name || e.company_name}{e.phone ? ` · ${fmtPhone(e.phone)}` : ''}
+              </span>
+              <Button
+                size="sm"
+                loading={send.isPending}
+                disabled={!templateId || noPhone}
+                onClick={() => send.mutate()}
+              >
+                Send SMS
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 

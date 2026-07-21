@@ -11,6 +11,8 @@ import type {
   OtpRequestResponse,
   Paginated,
   Proposal,
+  SmsTemplate,
+  Touchpoint,
   User,
   VerifyOtpResponse,
 } from './types';
@@ -107,6 +109,10 @@ export const endpoints = {
      * for consultants (IsConsoleUser on EnquiryViewSet.destroy).
      */
     remove: (id: number | string) => api.delete<void>(`/enquiries/${id}/`),
+    /** Send a DLT-approved template to the lead's contact. In dev mode (no
+     *  gateway wired) it logs the touchpoint without sending. */
+    sendSms: (id: number | string, template: number) =>
+      api.post<Touchpoint>(`/enquiries/${id}/send_sms/`, { template }),
   },
 
   // ----- Companies / Contacts -----
@@ -183,6 +189,15 @@ export const endpoints = {
   },
 
   // ----- Master data (writes) -----
+  smsTemplates: {
+    list: () => api.get<Paginated<SmsTemplate>>('/sms-templates/'),
+    create: (data: Partial<SmsTemplate> & { name: string; body: string }) =>
+      api.post<SmsTemplate>('/sms-templates/', data),
+    patch: (id: number, data: Partial<SmsTemplate>) =>
+      api.patch<SmsTemplate>(`/sms-templates/${id}/`, data),
+    remove: (id: number) => api.delete<void>(`/sms-templates/${id}/`),
+  },
+
   masterDataWrite: {
     create: (data: { category: string; value: string; label: string; order?: number }) =>
       api.post<MasterDataItem>('/master-data/', data),

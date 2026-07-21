@@ -280,3 +280,17 @@ export type MasterDataItem = {
   order: number;
   is_active: boolean;
 };
+
+
+/** A DLT-approved SMS a consultant can send to a lead. `body` carries
+ *  {name}/{company}/{lead_id}/{consultant} blanks; the rest must match the
+ *  registered template word-for-word (India DLT). */
+export type SmsTemplate = {
+  id: number;
+  name: string;
+  body: string;
+  dlt_template_id: string;
+  is_active: boolean;
+  created_at: string;
+};
+
