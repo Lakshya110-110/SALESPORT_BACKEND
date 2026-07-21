@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import {
-  LayoutGrid, Users, Calendar, FileText, Building2, Database, LogOut,
+  LayoutGrid, Users, Calendar, FileText, Building2, Database, LogOut, MessageSquare,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -55,6 +55,7 @@ const NAV: Group[] = [
       { href: '/companies', label: 'Companies', icon: Building2 },
       { href: '/contacts', label: 'Contacts', icon: Users },
       { href: '/master-data', label: 'Master data', icon: Database },
+      { href: '/sms-templates', label: 'SMS templates', icon: MessageSquare },
     ],
   },
   { label: 'Admin', adminOnly: true, items: [{ href: '/users', label: 'Users', icon: Users }] },
