@@ -17,6 +17,7 @@ router.register("follow-ups", views.FollowUpViewSet, basename="followup")
 router.register("users", views.UserViewSet, basename="user")
 router.register("notifications", views.NotificationViewSet, basename="notification")
 router.register("master-data", views.MasterDataViewSet, basename="masterdata")
+router.register("sms-templates", views.SmsTemplateViewSet, basename="smstemplate")
 
 urlpatterns = [
     path("admin/", admin.site.urls),

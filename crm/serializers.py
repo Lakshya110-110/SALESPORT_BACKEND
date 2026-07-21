@@ -2,7 +2,7 @@ from django.conf import settings
 from rest_framework import serializers
 from .models import (
     User, Company, Contact, Enquiry, Touchpoint, NegotiationRound,
-    Meeting, Proposal, Notification, MasterData, FollowUp,
+    Meeting, Proposal, Notification, MasterData, FollowUp, SmsTemplate,
 )
 from .phone import is_valid_indian_mobile, normalize_phone, PHONE_ERROR
 
@@ -321,3 +321,11 @@ class VerifyOTPSerializer(serializers.Serializer):
     # No `role` field: the login endpoint must not let a client choose its own
     # role (that allowed self-registering as admin). New users default to
     # consultant server-side; see verify_otp in views.py.
+
+
+class SmsTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SmsTemplate
+        fields = ["id", "name", "body", "dlt_template_id", "is_active", "created_at"]
+        read_only_fields = ["id", "created_at"]
+

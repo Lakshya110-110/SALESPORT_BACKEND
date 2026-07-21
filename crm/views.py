@@ -12,14 +12,14 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import (
     User, OTP, Company, Contact, Enquiry, Touchpoint, NegotiationRound,
-    Meeting, Proposal, Notification, MasterData, FollowUp,
+    Meeting, Proposal, Notification, MasterData, FollowUp, SmsTemplate,
 )
 from .serializers import (
     UserSerializer, CompanySerializer, ContactSerializer,
     EnquiryListSerializer, EnquiryDetailSerializer, TouchpointSerializer,
     NegotiationRoundSerializer, MeetingSerializer, ProposalSerializer,
     NotificationSerializer, MasterDataSerializer, FollowUpSerializer,
-    RequestOTPSerializer, VerifyOTPSerializer,
+    RequestOTPSerializer, VerifyOTPSerializer, SmsTemplateSerializer,
 )
 from .permissions import IsAdminRole, IsConsoleUser
 from .phone import normalize_phone
@@ -30,6 +30,7 @@ from .sockets import (
 )
 from .notifications import get_notification_service
 from .otp_delivery import get_otp_delivery_service, SmsSendError
+from .sms import deliver_sms, sms_live
 
 
 # ===========================================================================
@@ -472,6 +473,73 @@ class EnquiryViewSet(viewsets.ModelViewSet):
         emit_enquiry_action(enq, "touchpoint:created", {"touchpoint": ser.data})
         return Response(ser.data, status=status.HTTP_201_CREATED)
 
+    # ---- Send a templated SMS to the lead ----
+    @action(detail=True, methods=["post"])
+    def send_sms(self, request, pk=None):
+        """Send one DLT-approved template to the enquiry's contact and log it.
+
+        Free-form SMS to a customer is illegal in India (DLT), so the caller
+        chooses a registered SmsTemplate by id — never supplies raw text. The
+        template's blanks are filled from THIS enquiry, sent through the shared
+        gateway, and recorded as an outbound SMS touchpoint so it shows in the
+        Communication thread exactly like a note.
+
+        No role gate beyond reaching the enquiry: get_queryset already limits a
+        consultant to their own leads, so "anyone can send" scopes itself.
+        """
+        enq = self.get_object()
+
+        # Need somewhere to send it. contact.phone first, then the enquiry's own.
+        to = (enq.contact.phone if enq.contact and enq.contact.phone else enq.phone or "").strip()
+        if not to:
+            return Response(
+                {"detail": "This enquiry has no contact phone number to send to."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        template_id = request.data.get("template")
+        try:
+            template = SmsTemplate.objects.get(pk=template_id, is_active=True)
+        except (SmsTemplate.DoesNotExist, ValueError, TypeError):
+            return Response(
+                {"detail": "Pick a valid SMS template."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        message = template.render(
+            name=(enq.contact.name if enq.contact else "") or "",
+            company=enq.company.name if enq.company else "",
+            lead_id=enq.lead_id or "",
+            consultant=request.user.name or "",
+        )
+
+        # In dev mode (gateway not wired) nothing is sent — we still log the
+        # touchpoint so the whole flow is exercisable without cost or a real
+        # handset. In live mode a rejection raises and we surface a 502 rather
+        # than logging a message that never left.
+        if sms_live():
+            try:
+                deliver_sms(phone=to, message=message, dlt_template_id=template.dlt_template_id or None)
+            except SmsSendError as exc:
+                return Response(
+                    {"detail": f"Couldn't send the SMS. {exc}"},
+                    status=status.HTTP_502_BAD_GATEWAY,
+                )
+
+        tp = Touchpoint.objects.create(
+            enquiry=enq,
+            channel="SMS",
+            direction="Outbound",
+            note=message,
+            created_by=request.user,
+        )
+        data = TouchpointSerializer(tp).data
+        emit_enquiry_action(enq, "touchpoint:created", {"touchpoint": data})
+        return Response(
+            {**data, "delivery": "sent" if sms_live() else "logged (dev mode — no SMS gateway wired)"},
+            status=status.HTTP_201_CREATED,
+        )
+
     # ---- Change status ----
     @action(detail=True, methods=["post"])
     def change_status(self, request, pk=None):
@@ -878,3 +946,20 @@ def dashboard(request):
         lost.values("lost_reason").annotate(count=Count("id")).order_by("-count")
     )
     return Response(data)
+
+
+class SmsTemplateViewSet(viewsets.ModelViewSet):
+    """The DLT-approved messages consultants can send. Reads are open (the
+    picker needs them, on web and mobile); writes are console-only, because a
+    wrong dlt_template_id or a body that drifts from the registered text means
+    the operator silently drops every send — a compliance footgun, not routine
+    data entry."""
+    queryset = SmsTemplate.objects.filter(is_active=True)
+    serializer_class = SmsTemplateSerializer
+    search_fields = ["name", "body"]
+
+    def get_permissions(self):
+        if self.action in ("create", "update", "partial_update", "destroy"):
+            return [permissions.IsAuthenticated(), IsConsoleUser()]
+        return super().get_permissions()
+

@@ -459,3 +459,37 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"[{self.ntype}] {self.title}"
+
+
+class SmsTemplate(models.Model):
+    """A DLT-approved SMS a consultant can send to a lead.
+
+    India's DLT regime only lets an operator deliver text that byte-matches a
+    template already registered with them, so free-form SMS to a customer is
+    illegal — every sendable message lives here as a row whose `body` is the
+    approved text and whose `dlt_template_id` is the registration it maps to.
+
+    `body` carries {placeholders} for the parts DLT allows to vary — {name},
+    {company}, {lead_id}, {consultant}. The variable-substitution the operator
+    permits is exactly these blanks; the surrounding words must not change.
+    """
+    name = models.CharField(max_length=80)  # what the consultant sees in the picker
+    body = models.TextField()               # approved text, with {placeholders}
+    dlt_template_id = models.CharField(max_length=40, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
+
+    def render(self, *, name="", company="", lead_id="", consultant="") -> str:
+        """Fill the blanks. Unknown placeholders in the body would raise KeyError
+        on str.format and 500 the send, so map through a defaulting dict — a
+        template author's typo becomes empty text, never a crash."""
+        from collections import defaultdict
+        values = defaultdict(str, name=name, company=company, lead_id=lead_id, consultant=consultant)
+        return self.body.format_map(values)
+
